@@ -1,0 +1,1221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BLS Video Annotation Tool</title>
+<style>
+  @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/0/css/font-awesome.min.css');
+
+  :root {
+    --ink: #1c2933;
+    --paper: #eef1f4;
+    --panel: #ffffff;
+    --line: #d7dde3;
+    --blue: #2563a8;
+    --blue-dark: #1a4a7c;
+    --amber: #b8790f;
+    --red: #b3402f;
+    --green: #2f7d4f;
+    --muted: #64707b;
+    --sans: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
+    --mono: 'Consolas', 'SFMono-Regular', Menlo, monospace;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 14px;
+  }
+
+  ::selection { background: var(--blue); color: white; }
+
+  /* ---------- Header ---------- */
+  header {
+    background: var(--blue-dark);
+    color: #f4f6f8;
+    padding: 16px 28px;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    border-bottom: 3px solid var(--blue);
+  }
+  header .brand {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+  }
+  header h1 {
+    font-family: var(--sans);
+    font-weight: 600;
+    font-size: 20px;
+    margin: 0;
+    letter-spacing: 0.1px;
+  }
+  header .tag {
+    font-size: 12px;
+    letter-spacing: 0.4px;
+    color: #c3d0dc;
+  }
+  header .status {
+    font-size: 12px;
+    color: #c3d0dc;
+  }
+  header .status strong { color: #f4f6f8; }
+
+  /* ---------- Layout ---------- */
+  .layout {
+    display: grid;
+    grid-template-columns: 1.35fr 1fr;
+    gap: 18px;
+    padding: 18px;
+    align-items: start;
+  }
+  @media (max-width: 1100px) {
+    .layout { grid-template-columns: 1fr; }
+  }
+
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    box-shadow: 0 1px 2px rgba(28,41,51,0.05);
+  }
+  .card-header {
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #f7f9fa;
+  }
+  .card-header h2 {
+    font-size: 14.5px;
+    margin: 0;
+    font-weight: 600;
+  }
+  .card-body { padding: 16px; }
+
+  /* ---------- Setup bar ---------- */
+  .setup-bar {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+    align-items: center;
+    padding: 10px 16px;
+    background: #f7f9fa;
+    border-bottom: 1px solid var(--line);
+    font-size: 13px;
+  }
+  .setup-bar label { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-right: 6px; }
+  .setup-bar input[type=text], .setup-bar input[type=number], .setup-bar select {
+    font-family: var(--sans);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: 6px 9px;
+    font-size: 13px;
+    background: white;
+    color: var(--ink);
+  }
+  .setup-bar .grp { display:flex; align-items:center; gap:6px; }
+
+  /* ---------- Video area ---------- */
+  .video-wrap {
+    background: #0c1620;
+    aspect-ratio: 16/9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .video-wrap video {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    background: #000;
+  }
+  .video-empty {
+    color: #8fa3b5;
+    font-size: 13px;
+    text-align: center;
+    padding: 40px;
+  }
+  .video-empty .icon { font-size: 34px; display:block; margin-bottom: 10px; opacity: 0.6; }
+
+  .file-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--blue);
+    color: white;
+    border: none;
+    padding: 7px 14px;
+    border-radius: 3px;
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+    letter-spacing: 0.2px;
+  }
+  .file-btn:hover { background: var(--blue-dark); }
+  .file-btn.ghost {
+    background: transparent;
+    color: var(--blue);
+    border: 1px solid var(--blue);
+  }
+  .file-btn.ghost:hover { background: rgba(37,99,168,0.08); }
+  .file-btn.small { padding: 4px 9px; font-size: 11.5px; }
+
+  /* ---------- Transport controls ---------- */
+  .transport {
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 1px solid var(--line);
+    flex-wrap: wrap;
+  }
+  .transport .timecode {
+    font-family: var(--mono);
+    font-size: 15px;
+    background: var(--ink);
+    color: #d9e6f0;
+    padding: 5px 10px;
+    border-radius: 3px;
+    letter-spacing: 0.5px;
+  }
+  .transport button {
+    background: white;
+    border: 1px solid var(--line);
+    color: var(--ink);
+    padding: 6px 10px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 13px;
+    font-family: var(--sans);
+  }
+  .transport button:hover { background: #eef3f7; border-color: var(--blue); }
+  .transport .rate-select {
+    font-size: 12px;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: 5px 6px;
+    background: white;
+  }
+  .transport .spacer { flex: 1; }
+  .kbd-hint {
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .kbd-hint kbd {
+    background: #e5eaef;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: 1px 5px;
+    font-family: var(--mono);
+  }
+
+  .seekbar-wrap { padding: 4px 16px 14px; }
+  input[type=range].seekbar {
+    width: 100%;
+    accent-color: var(--blue);
+  }
+
+  /* ---------- Tabs ---------- */
+  .tabs {
+    display: flex;
+    border-bottom: 1px solid var(--line);
+    background: #f7f9fa;
+  }
+  .tab {
+    padding: 10px 16px;
+    font-size: 12.5px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    color: var(--muted);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+  }
+  .tab.active {
+    color: var(--blue-dark);
+    border-bottom-color: var(--blue);
+    background: var(--panel);
+  }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* ---------- Quick-tag action grid (primary selector) ---------- */
+  .quick-actions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 8px;
+  }
+  .quick-actions-grid button {
+    text-align: left;
+    background: white;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: 8px 10px;
+    font-size: 11.5px;
+    cursor: pointer;
+    line-height: 1.35;
+  }
+  .quick-actions-grid button:hover { border-color: var(--blue); background: #eef4fa; }
+  .quick-actions-grid button.selected { border-color: var(--blue); background: var(--blue); color: white; }
+  .quick-actions-grid button.selected .code { color: white; }
+  .quick-actions-grid button .code { font-family: var(--mono); color: var(--blue); font-weight: 700; display:block; margin-bottom: 2px; }
+
+  .group-label {
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: var(--muted);
+    margin: 14px 0 6px;
+    font-weight: 700;
+  }
+  .group-label:first-child { margin-top: 0; }
+
+  /* ---------- Action logging form ---------- */
+  .log-form {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .selected-action-banner {
+    background: #eef4fa;
+    border: 1px solid var(--blue);
+    border-radius: 3px;
+    padding: 8px 10px;
+    font-size: 12.5px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .selected-action-banner .code-chip { font-family: var(--mono); background: var(--blue); color: white; padding: 2px 7px; border-radius: 3px; font-size: 11px; }
+  .selected-action-banner.empty { background: #f7f9fa; border-color: var(--line); color: var(--muted); }
+
+  .field label {
+    display: block;
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+  .field select, .field input, .field textarea {
+    width: 100%;
+    font-family: var(--sans);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: 7px 9px;
+    font-size: 13px;
+    background: white;
+    color: var(--ink);
+  }
+  .field textarea { resize: vertical; min-height: 44px; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  .add-row-btn {
+    background: var(--blue-dark);
+    color: white;
+    border: none;
+    padding: 10px;
+    border-radius: 3px;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    cursor: pointer;
+    font-size: 12.5px;
+  }
+  .add-row-btn:hover { background: #123a63; }
+  .add-row-btn:disabled { background: var(--line); color: var(--muted); cursor: not-allowed; }
+
+  /* ---------- Log table ---------- */
+  .log-table-wrap { max-height: 360px; overflow-y: auto; border-top: 1px solid var(--line); }
+  table.log-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  table.log-table th {
+    position: sticky; top: 0;
+    background: #e5eaef;
+    text-align: left;
+    padding: 7px 8px;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--muted);
+    border-bottom: 1px solid var(--line);
+  }
+  table.log-table td {
+    padding: 7px 8px;
+    border-bottom: 1px solid #eef1f4;
+    vertical-align: top;
+  }
+  table.log-table tr:hover td { background: #f7f9fa; }
+  .code-chip {
+    font-family: var(--mono);
+    background: var(--blue);
+    color: white;
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-size: 10.5px;
+  }
+  .time-link { font-family: var(--mono); color: var(--blue-dark); cursor: pointer; text-decoration: underline; }
+  .del-btn { background: none; border: none; color: var(--red); cursor: pointer; font-size: 14px; }
+
+  .empty-note { padding: 20px; text-align: center; color: var(--muted); font-size: 12.5px; }
+
+  /* ---------- Rubric ---------- */
+  .rubric-item {
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    margin-bottom: 10px;
+    overflow: hidden;
+  }
+  .rubric-item-head {
+    padding: 9px 12px;
+    background: #f7f9fa;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .rubric-item-head .title { font-size: 12.5px; font-weight: 600; line-height: 1.4; }
+  .rubric-item-head .pts { font-family: var(--mono); font-size: 11px; color: var(--muted); white-space: nowrap; }
+  .rubric-item-body { padding: 10px 12px; }
+
+  .rubric-row {
+    display: grid;
+    grid-template-columns: 90px 1fr;
+    gap: 10px;
+    align-items: start;
+    margin-bottom: 8px;
+  }
+  .rubric-row input[type=number] {
+    width: 100%; font-family: var(--mono); border: 1px solid var(--line); border-radius: 3px; padding: 6px 7px; font-size: 12.5px;
+  }
+
+  .mark-toggle {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+  .mark-toggle button {
+    flex: 1;
+    padding: 7px;
+    border: 1px solid var(--line);
+    background: white;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.2px;
+  }
+  .mark-toggle button[data-v="correct"].active { background: var(--green); color: white; border-color: var(--green); }
+  .mark-toggle button[data-v="partial"].active { background: var(--amber); color: white; border-color: var(--amber); }
+  .mark-toggle button[data-v="incorrect"].active { background: var(--red); color: white; border-color: var(--red); }
+  .mark-toggle button[data-v="notseen"].active { background: var(--muted); color: white; border-color: var(--muted); }
+
+  .rubric-comment {
+    width: 100%; font-size: 11.5px; border: 1px solid var(--line); border-radius: 3px; padding: 6px 7px; min-height: 38px; font-family: var(--sans);
+  }
+
+  .mark-pill { font-size: 10px; padding: 2px 6px; border-radius: 8px; font-weight: 700; text-transform: uppercase; color: white; }
+  .mark-pill.correct { background: var(--green); }
+  .mark-pill.partial { background: var(--amber); }
+  .mark-pill.incorrect { background: var(--red); }
+  .mark-pill.notseen { background: var(--muted); }
+
+  .rubric-total {
+    position: sticky;
+    bottom: 0;
+    background: var(--ink);
+    color: white;
+    padding: 12px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: var(--mono);
+    border-radius: 0 0 4px 4px;
+  }
+  .rubric-total .totals div span.label { color: #a9b6c1; font-size: 10px; display:block; text-transform: uppercase; letter-spacing: 0.5px; }
+  .rubric-total .totals div span.value { font-size: 18px; font-weight: 700; }
+
+  /* ---------- Export bar ---------- */
+  .export-bar {
+    display: flex;
+    gap: 10px;
+    padding: 14px 16px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .export-bar .note { font-size: 11px; color: var(--muted); flex-basis: 100%; margin-top: 4px; }
+
+  .badge {
+    display: inline-block;
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 8px;
+    border: 1px solid var(--line);
+    color: var(--muted);
+    letter-spacing: 0.3px;
+  }
+
+  .privacy-strip {
+    background: #e9f3ee;
+    border-bottom: 1px solid var(--line);
+    color: var(--green);
+    font-size: 11.5px;
+    text-align: center;
+    padding: 6px;
+    letter-spacing: 0.2px;
+  }
+
+  .autosave-note {
+    font-size: 10.5px;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .autosave-dot {
+    width: 7px; height: 7px; border-radius: 50%; background: var(--green); display:inline-block;
+    transition: background 0.3s;
+  }
+  .autosave-dot.pulsing { background: var(--amber); }
+
+  ::-webkit-scrollbar { width: 9px; height: 9px; }
+  ::-webkit-scrollbar-track { background: var(--paper); }
+  ::-webkit-scrollbar-thumb { background: var(--line); border-radius: 5px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+  footer {
+    text-align: center;
+    padding: 16px;
+    color: var(--muted);
+    font-size: 11px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <h1>BLS Annotation Bench</h1>
+    <span class="tag">NURS2208 &middot; OSCE Station 3 &middot; BLS &amp; AED</span>
+  </div>
+  <div class="status" id="statusLine">No video loaded &middot; <strong>0</strong> actions logged</div>
+</header>
+
+<div class="privacy-strip">&#128274; Runs entirely in this browser tab. Video files and annotations are never uploaded &mdash; all data stays on this device.</div>
+
+<div class="setup-bar">
+  <div class="grp">
+    <label>Video name</label>
+    <input type="text" id="videoId" placeholder="e.g. V1-S1_part1" style="width:200px">
+  </div>
+  <div class="grp">
+    <label>Assessor</label>
+    <input type="text" id="assessorName" placeholder="Your name" style="width:160px">
+  </div>
+  <div class="grp" style="margin-left:auto">
+    <span class="autosave-note"><span class="autosave-dot" id="autosaveDot"></span> <span id="autosaveText">Auto-saved</span></span>
+    <button class="file-btn small ghost" id="loadSessionBtn"><i class="fa fa-folder-open"></i> Load saved session</button>
+    <input type="file" id="loadSessionInput" accept=".json" style="display:none">
+  </div>
+</div>
+
+<div class="layout">
+
+  <!-- LEFT: Video + logging -->
+  <div>
+    <div class="card">
+      <div class="card-header">
+        <h2>Video</h2>
+        <div>
+          <button class="file-btn" id="pickVideoBtn"><i class="fa fa-film"></i> Open video file&hellip;</button>
+          <input type="file" id="videoInput" accept="video/*" style="display:none">
+        </div>
+      </div>
+      <div class="video-wrap" id="videoWrap">
+        <div class="video-empty" id="videoEmpty">
+          <span class="icon">&#9654;</span>
+          Open a local video file to begin.<br>Nothing is uploaded &mdash; the file is read directly from your computer.
+        </div>
+        <video id="player" style="display:none"></video>
+      </div>
+
+      <div class="seekbar-wrap">
+        <input type="range" class="seekbar" id="seekbar" min="0" max="100" value="0" step="0.01">
+      </div>
+
+      <div class="transport">
+        <button id="playPauseBtn" title="Space">&#9654; Play</button>
+        <button id="back5" title="J">&laquo; 5s</button>
+        <button id="back1" title="&larr;">&lsaquo; 1s</button>
+        <button id="fwd1" title="&rarr;">1s &rsaquo;</button>
+        <button id="fwd5" title="L">5s &raquo;</button>
+        <div class="timecode" id="timecode">00:00:00 / 00:00:00</div>
+        <select class="rate-select" id="rateSelect">
+          <option value="0.25">0.25&times;</option>
+          <option value="0.5">0.5&times;</option>
+          <option value="0.75">0.75&times;</option>
+          <option value="1" selected>1&times;</option>
+          <option value="1.5">1.5&times;</option>
+          <option value="2">2&times;</option>
+        </select>
+        <div class="spacer"></div>
+        <span class="kbd-hint"><kbd>Space</kbd> play/pause &nbsp; <kbd>&larr;</kbd>/<kbd>&rarr;</kbd> &plusmn;1s &nbsp; <kbd>M</kbd> mark start</span>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <div class="card-header">
+        <h2>Select action</h2>
+        <span class="badge">click a code to select</span>
+      </div>
+      <div class="card-body">
+        <div class="quick-actions-grid" id="quickGrid"></div>
+      </div>
+
+      <div class="card-body" style="padding-top:0">
+        <div class="log-form">
+          <div class="selected-action-banner empty" id="selectedBanner">No action selected &mdash; click one above</div>
+          <div class="row2">
+            <div class="field">
+              <label>Start time</label>
+              <div class="grp">
+                <input type="text" id="startTime" placeholder="00:00:00" style="font-family:var(--mono)">
+                <button class="file-btn small ghost" id="setStartBtn">Use current</button>
+              </div>
+            </div>
+            <div class="field">
+              <label>End time</label>
+              <div class="grp">
+                <input type="text" id="endTime" placeholder="00:00:00" style="font-family:var(--mono)">
+                <button class="file-btn small ghost" id="setEndBtn">Use current</button>
+              </div>
+            </div>
+          </div>
+          <div class="field">
+            <label>Comments</label>
+            <textarea id="commentBox" placeholder="Optional notes for feedback / AI training reference&hellip;"></textarea>
+          </div>
+          <button class="add-row-btn" id="addLogBtn" disabled>+ Add to log</button>
+        </div>
+      </div>
+
+      <div class="log-table-wrap">
+        <table class="log-table" id="logTable">
+          <thead>
+            <tr>
+              <th>Action</th>
+              <th>Start</th>
+              <th>End</th>
+              <th>Comment</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="logTableBody"></tbody>
+        </table>
+        <div class="empty-note" id="emptyLogNote">No actions logged yet for this video.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: Rubric -->
+  <div>
+    <div class="card">
+      <div class="card-header">
+        <h2>OSCE Rubric &mdash; Station 3: BLS &amp; AED</h2>
+        <span class="badge">10 marks</span>
+      </div>
+      <div class="card-body" style="max-height: 640px; overflow-y:auto;">
+        <div id="rubricBody" style="padding-top:2px;"></div>
+        <div class="field" style="margin-top:6px">
+          <label>Additional comments (overall)</label>
+          <textarea id="overallComments" placeholder="General feedback on this student's performance not tied to a specific criterion&hellip;" style="min-height:70px"></textarea>
+        </div>
+      </div>
+      <div class="rubric-total">
+        <div class="totals">
+          <div><span class="label">Total</span><span class="value" id="totalScore">0.0</span></div>
+        </div>
+        <div style="font-size:10px;color:#a9b6c1">/ 10.0</div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <div class="card-header"><h2>Save &amp; Export</h2></div>
+      <div class="export-bar">
+        <button class="file-btn" id="saveSessionBtn"><i class="fa fa-save"></i> Save session (.json)</button>
+        <button class="file-btn ghost" id="exportLogBtn"><i class="fa fa-table"></i> Export action log (.xlsx)</button>
+        <button class="file-btn ghost" id="exportRubricBtn"><i class="fa fa-file-text"></i> Export rubric scores (.xlsx)</button>
+        <div class="note">Your work auto-saves to this browser as you go (and a backup file downloads periodically). Use these buttons any time to export a clean copy.</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer>BLS Video Annotation Tool &middot; local-only, no data leaves this browser &middot; built for AI-enhanced feedback research (RMIT/NURS2208)</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+(function(){
+
+  // ---------------------------------------------------------------
+  // Data model: 24 predefined BLS actions (from Actions sheet)
+  // ---------------------------------------------------------------
+  const ACTIONS = [
+    {code:"A1.1", label:"Looks around the environment", group:"1. Danger / Hazards"},
+    {code:"A1.2", label:"Checks oxygen source/equipment", group:"1. Danger / Hazards"},
+    {code:"A2.1", label:"Shakes the patient's shoulders", group:"2. Conscious State"},
+    {code:"A2.2", label:"Performs a trapezius squeeze", group:"2. Conscious State"},
+    {code:"A2.3", label:"Calls the patient's name (audio)", group:"2. Conscious State"},
+    {code:"A3.1", label:"Presses the emergency call button", group:"3. Sends for Help"},
+    {code:"A3.2", label:"Emergency alarm/siren is heard (audio)", group:"3. Sends for Help"},
+    {code:"A4.1", label:"Lowers the head of the bed", group:"4. Position / Open Airway"},
+    {code:"A4.2", label:"Removes the pillow", group:"4. Position / Open Airway"},
+    {code:"A4.3", label:"Performs a head tilt–chin lift", group:"4. Position / Open Airway"},
+    {code:"A5.1", label:"Observes chest movement", group:"5. Look / Listen / Feel"},
+    {code:"A5.2", label:"Places cheek near mouth/nose to feel airflow", group:"5. Look / Listen / Feel"},
+    {code:"A6.1", label:"Performs chest compressions", group:"6. Compressions"},
+    {code:"A6.2", label:"Counts compressions aloud (audio)", group:"6. Compressions"},
+    {code:"A7.1", label:"Removes clothing from the chest", group:"7. Prepares for AED"},
+    {code:"A7.2", label:"Brings the AED", group:"7. Prepares for AED"},
+    {code:"A8.1", label:"Places AED pads on the patient's chest", group:"8. AED Pad Placement"},
+    {code:"A9.1", label:"Stands clear of the patient/bed", group:"9. AED Use"},
+    {code:"A9.2", label:"Performs a 360-degree safety check", group:"9. AED Use"},
+    {code:"A9.3", label:"Uses a hand signal to indicate \"stand clear\"", group:"9. AED Use"},
+    {code:"A9.4", label:"Verbalises \"stand clear\" (audio)", group:"9. AED Use"},
+    {code:"A9.5", label:"Presses the shock button", group:"9. AED Use"},
+    {code:"A9.6", label:"Delivers a shock", group:"9. AED Use"},
+    {code:"A9.7", label:"Uses a bag-valve mask (BVM) appropriately", group:"9. AED Use"},
+  ];
+
+  // ---------------------------------------------------------------
+  // Data model: OSCE rubric criteria (from BLS rubrics for RA.docx)
+  // ---------------------------------------------------------------
+  const RUBRIC = [
+    {id:"r1", pts:1, title:"1. Checks for danger/hazards to self and others when approaching the patient.", relatedActions:["A1.1","A1.2"]},
+    {id:"r2", pts:2, title:"2. Assesses patient's conscious state AND sends for help.", relatedActions:["A2.1","A2.2","A2.3","A3.1","A3.2"]},
+    {id:"r3", pts:1, title:"3. Positions patient appropriately and clears/opens the airway.", relatedActions:["A4.1","A4.2","A4.3"]},
+    {id:"r4", pts:1, title:"4. Demonstrates Guedel airway insertion and proper resuscitator use.", relatedActions:["A5.1","A5.2"]},
+    {id:"r5", pts:1, title:"5. Demonstrates the proper position and depth of chest compressions.", relatedActions:["A6.1","A6.2"]},
+    {id:"r6", pts:1, title:"6. Prepares the patient for application of the AED and the indications.", relatedActions:["A7.1","A7.2","A8.1"]},
+    {id:"r7", pts:0.5, title:"7. Positioning of AED pads.", relatedActions:["A8.1"]},
+    {id:"r8", pts:1, title:"8. Demonstrates appropriate and safe practice using AED (follows prompts).", relatedActions:["A9.1","A9.2","A9.3","A9.4","A9.5","A9.6"]},
+    {id:"r9", pts:0.5, title:"9. Continues to follow AED instructions and continues BLS as indicated.", relatedActions:["A6.1","A9.7"]},
+    {id:"r10", pts:0.5, title:"10. Evidence of effective interaction and collaboration with team members.", relatedActions:[]},
+    {id:"r11", pts:0.5, title:"11. Demonstrates ability to recognise potential problems and link theory to practice.", relatedActions:[]},
+  ];
+  // Total = 1+2+1+1+1+1+0.5+1+0.5+0.5+0.5 = 10.0
+
+  const MARK_LABELS = {correct:"Correct", partial:"Partial", incorrect:"Incorrect", notseen:"Not observed"};
+  const STORAGE_KEY = 'bls_annotation_autosave_v1';
+  const BACKUP_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
+  const BACKUP_EVERY_N_ENTRIES = 5;
+
+  // ---------------------------------------------------------------
+  // State
+  // ---------------------------------------------------------------
+  let logEntries = []; // {id, actionCode, actionLabel, start, end, comment}
+  let rubricScores = {}; // { r1: {mark:'', markCorrect:'', comment:''} }
+  RUBRIC.forEach(r => { rubricScores[r.id] = { mark: '', markCorrect: '', comment: '' }; });
+
+  let nextId = 1;
+  let currentVideoFileName = "";
+  let selectedActionCode = null;
+  let entriesSinceBackup = 0;
+
+  // ---------------------------------------------------------------
+  // Elements
+  // ---------------------------------------------------------------
+  const player = document.getElementById('player');
+  const videoEmpty = document.getElementById('videoEmpty');
+  const videoInput = document.getElementById('videoInput');
+  const pickVideoBtn = document.getElementById('pickVideoBtn');
+  const seekbar = document.getElementById('seekbar');
+  const timecode = document.getElementById('timecode');
+  const playPauseBtn = document.getElementById('playPauseBtn');
+  const rateSelect = document.getElementById('rateSelect');
+  const statusLine = document.getElementById('statusLine');
+
+  const quickGrid = document.getElementById('quickGrid');
+  const selectedBanner = document.getElementById('selectedBanner');
+  const startTime = document.getElementById('startTime');
+  const endTime = document.getElementById('endTime');
+  const commentBox = document.getElementById('commentBox');
+  const addLogBtn = document.getElementById('addLogBtn');
+  const logTableBody = document.getElementById('logTableBody');
+  const emptyLogNote = document.getElementById('emptyLogNote');
+
+  const rubricBody = document.getElementById('rubricBody');
+  const totalScoreEl = document.getElementById('totalScore');
+  const overallComments = document.getElementById('overallComments');
+  overallComments.addEventListener('input', scheduleAutosave);
+
+  const autosaveDot = document.getElementById('autosaveDot');
+  const autosaveText = document.getElementById('autosaveText');
+
+  // ---------------------------------------------------------------
+  // Populate quick-tag grid (primary action selector), grouped
+  // ---------------------------------------------------------------
+  let lastGroup = null;
+  ACTIONS.forEach(a => {
+    if (a.group !== lastGroup) {
+      const gl = document.createElement('div');
+      gl.className = 'group-label';
+      gl.style.gridColumn = '1 / -1';
+      gl.textContent = a.group;
+      quickGrid.appendChild(gl);
+      lastGroup = a.group;
+    }
+    const btn = document.createElement('button');
+    btn.dataset.code = a.code;
+    btn.innerHTML = `<span class="code">${a.code}</span>${a.label}`;
+    btn.addEventListener('click', () => selectAction(a.code));
+    quickGrid.appendChild(btn);
+  });
+
+  function selectAction(code) {
+    selectedActionCode = code;
+    const action = ACTIONS.find(a => a.code === code);
+    quickGrid.querySelectorAll('button').forEach(b => b.classList.toggle('selected', b.dataset.code === code));
+    selectedBanner.classList.remove('empty');
+    selectedBanner.innerHTML = `<span class="code-chip">${action.code}</span> ${action.label}`;
+    // Reset start/end time whenever a new action is selected
+    startTime.value = '';
+    endTime.value = '';
+    addLogBtn.disabled = false;
+  }
+
+  // ---------------------------------------------------------------
+  // Video loading (local file, never uploaded)
+  // ---------------------------------------------------------------
+  pickVideoBtn.addEventListener('click', () => videoInput.click());
+  videoInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    player.src = url;
+    player.style.display = 'block';
+    videoEmpty.style.display = 'none';
+    currentVideoFileName = file.name;
+    document.getElementById('videoId').value = document.getElementById('videoId').value || file.name.replace(/\.[^.]+$/, '');
+    updateStatus();
+    scheduleAutosave();
+  });
+
+  function fmtTime(sec) {
+    if (!isFinite(sec) || sec < 0) sec = 0;
+    const h = Math.floor(sec / 3600);
+    const m = Math.floor((sec % 3600) / 60);
+    const s = Math.floor(sec % 60);
+    return [h,m,s].map(v => String(v).padStart(2,'0')).join(':');
+  }
+  function parseTime(str) {
+    const parts = str.split(':').map(Number);
+    if (parts.some(isNaN)) return null;
+    let sec = 0;
+    if (parts.length === 3) sec = parts[0]*3600 + parts[1]*60 + parts[2];
+    else if (parts.length === 2) sec = parts[0]*60 + parts[1];
+    else sec = parts[0];
+    return sec;
+  }
+
+  player.addEventListener('timeupdate', () => {
+    if (!isNaN(player.duration)) {
+      seekbar.value = (player.currentTime / player.duration) * 100;
+    }
+    timecode.textContent = `${fmtTime(player.currentTime)} / ${fmtTime(player.duration)}`;
+  });
+  player.addEventListener('loadedmetadata', () => {
+    timecode.textContent = `${fmtTime(player.currentTime)} / ${fmtTime(player.duration)}`;
+  });
+
+  seekbar.addEventListener('input', () => {
+    if (!isNaN(player.duration)) {
+      player.currentTime = (seekbar.value / 100) * player.duration;
+    }
+  });
+
+  playPauseBtn.addEventListener('click', togglePlay);
+  function togglePlay() {
+    if (player.paused) { player.play(); playPauseBtn.innerHTML = '&#10074;&#10074; Pause'; }
+    else { player.pause(); playPauseBtn.innerHTML = '&#9654; Play'; }
+  }
+  player.addEventListener('play', () => playPauseBtn.innerHTML = '&#10074;&#10074; Pause');
+  player.addEventListener('pause', () => playPauseBtn.innerHTML = '&#9654; Play');
+
+  document.getElementById('back5').addEventListener('click', () => player.currentTime = Math.max(0, player.currentTime - 5));
+  document.getElementById('fwd5').addEventListener('click', () => player.currentTime = Math.min(player.duration||0, player.currentTime + 5));
+  document.getElementById('back1').addEventListener('click', () => player.currentTime = Math.max(0, player.currentTime - 1));
+  document.getElementById('fwd1').addEventListener('click', () => player.currentTime = Math.min(player.duration||0, player.currentTime + 1));
+
+  rateSelect.addEventListener('change', () => player.playbackRate = parseFloat(rateSelect.value));
+
+  document.addEventListener('keydown', (e) => {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
+    if (!player.src) return;
+    if (e.code === 'Space') { e.preventDefault(); togglePlay(); }
+    else if (e.code === 'ArrowLeft') { e.preventDefault(); player.currentTime = Math.max(0, player.currentTime - 1); }
+    else if (e.code === 'ArrowRight') { e.preventDefault(); player.currentTime = Math.min(player.duration||0, player.currentTime + 1); }
+    else if (e.code === 'KeyJ') { player.currentTime = Math.max(0, player.currentTime - 5); }
+    else if (e.code === 'KeyL') { player.currentTime = Math.min(player.duration||0, player.currentTime + 5); }
+    else if (e.code === 'KeyM') { startTime.value = fmtTime(player.currentTime); }
+  });
+
+  document.getElementById('setStartBtn').addEventListener('click', () => startTime.value = fmtTime(player.currentTime));
+  document.getElementById('setEndBtn').addEventListener('click', () => endTime.value = fmtTime(player.currentTime));
+
+  // ---------------------------------------------------------------
+  // Action log
+  // ---------------------------------------------------------------
+  addLogBtn.addEventListener('click', () => {
+    if (!selectedActionCode) return;
+    const action = ACTIONS.find(a => a.code === selectedActionCode);
+    if (!action) return;
+    const s = startTime.value.trim();
+    const en = endTime.value.trim();
+    if (!s) { alert('Please set a start time (use "Use current" or type manually).'); return; }
+
+    logEntries.push({
+      id: nextId++,
+      actionCode: action.code,
+      actionLabel: action.label,
+      start: s,
+      end: en || s,
+      comment: commentBox.value.trim()
+    });
+    commentBox.value = '';
+    renderLog();
+    updateStatus();
+    entriesSinceBackup++;
+    scheduleAutosave();
+    if (entriesSinceBackup >= BACKUP_EVERY_N_ENTRIES) {
+      downloadBackup();
+      entriesSinceBackup = 0;
+    }
+  });
+
+  function renderLog() {
+    logTableBody.innerHTML = '';
+    emptyLogNote.style.display = logEntries.length === 0 ? 'block' : 'none';
+    logEntries.forEach(entry => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td><span class="code-chip">${entry.actionCode}</span><div style="margin-top:3px">${entry.actionLabel}</div></td>
+        <td><span class="time-link" data-t="${entry.start}">${entry.start}</span></td>
+        <td><span class="time-link" data-t="${entry.end}">${entry.end}</span></td>
+        <td>${entry.comment ? entry.comment.replace(/</g,'&lt;') : '<span style="color:var(--muted)">&mdash;</span>'}</td>
+        <td><button class="del-btn" data-id="${entry.id}" title="Delete">&times;</button></td>
+      `;
+      logTableBody.appendChild(tr);
+    });
+
+    logTableBody.querySelectorAll('.time-link').forEach(el => {
+      el.addEventListener('click', () => {
+        const t = parseTime(el.dataset.t);
+        if (t !== null) player.currentTime = t;
+      });
+    });
+    logTableBody.querySelectorAll('.del-btn').forEach(el => {
+      el.addEventListener('click', () => {
+        logEntries = logEntries.filter(e => e.id !== parseInt(el.dataset.id));
+        renderLog();
+        updateStatus();
+        scheduleAutosave();
+      });
+    });
+  }
+
+  function updateStatus() {
+    const vname = currentVideoFileName ? currentVideoFileName : 'No video loaded';
+    statusLine.innerHTML = `${vname} &middot; <strong>${logEntries.length}</strong> actions logged`;
+  }
+
+  // ---------------------------------------------------------------
+  // Rubric panel (single student, with correctness rating per item)
+  // ---------------------------------------------------------------
+  RUBRIC.forEach(r => {
+    const div = document.createElement('div');
+    div.className = 'rubric-item';
+    div.innerHTML = `
+      <div class="rubric-item-head">
+        <div class="title">${r.title}</div>
+        <div class="pts">${r.pts} mark${r.pts !== 1 ? 's' : ''}</div>
+      </div>
+      <div class="rubric-item-body">
+        <div class="mark-toggle" data-rid="${r.id}">
+          <button data-v="correct">Correct</button>
+          <button data-v="partial">Partial</button>
+          <button data-v="incorrect">Incorrect</button>
+          <button data-v="notseen">Not observed</button>
+        </div>
+        <div class="rubric-row">
+          <input type="number" step="0.5" min="0" max="${r.pts}" data-rid="${r.id}" class="rubric-score" placeholder="0–${r.pts}">
+          <textarea data-rid="${r.id}" class="rubric-comment" placeholder="Comment / evidence&hellip;"></textarea>
+        </div>
+      </div>
+    `;
+    rubricBody.appendChild(div);
+  });
+
+  rubricBody.querySelectorAll('.mark-toggle').forEach(group => {
+    group.querySelectorAll('button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const rid = group.dataset.rid;
+        group.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        rubricScores[rid].markCorrect = btn.dataset.v;
+        scheduleAutosave();
+      });
+    });
+  });
+
+  rubricBody.querySelectorAll('.rubric-score').forEach(inp => {
+    inp.addEventListener('input', () => {
+      const rid = inp.dataset.rid;
+      rubricScores[rid].mark = inp.value;
+      updateTotals();
+      scheduleAutosave();
+    });
+  });
+  rubricBody.querySelectorAll('.rubric-comment').forEach(ta => {
+    ta.addEventListener('input', () => {
+      const rid = ta.dataset.rid;
+      rubricScores[rid].comment = ta.value;
+      scheduleAutosave();
+    });
+  });
+
+  function updateTotals() {
+    let total = 0;
+    RUBRIC.forEach(r => {
+      const v = parseFloat(rubricScores[r.id].mark);
+      if (!isNaN(v)) total += v;
+    });
+    totalScoreEl.textContent = total.toFixed(1);
+  }
+
+  function refreshRubricUI() {
+    rubricBody.querySelectorAll('.rubric-score').forEach(inp => {
+      inp.value = rubricScores[inp.dataset.rid]?.mark || '';
+    });
+    rubricBody.querySelectorAll('.rubric-comment').forEach(ta => {
+      ta.value = rubricScores[ta.dataset.rid]?.comment || '';
+    });
+    rubricBody.querySelectorAll('.mark-toggle').forEach(group => {
+      const rid = group.dataset.rid;
+      const v = rubricScores[rid]?.markCorrect || '';
+      group.querySelectorAll('button').forEach(b => b.classList.toggle('active', b.dataset.v === v));
+    });
+    updateTotals();
+  }
+
+  // ---------------------------------------------------------------
+  // Build a full snapshot object
+  // ---------------------------------------------------------------
+  function buildSnapshot() {
+    return {
+      meta: {
+        videoId: document.getElementById('videoId').value,
+        videoFileName: currentVideoFileName,
+        assessor: document.getElementById('assessorName').value,
+        savedAt: new Date().toISOString()
+      },
+      logEntries,
+      rubricScores,
+      overallComments: overallComments.value
+    };
+  }
+
+  function restoreSnapshot(data) {
+    document.getElementById('videoId').value = data.meta?.videoId || '';
+    document.getElementById('assessorName').value = data.meta?.assessor || '';
+    currentVideoFileName = data.meta?.videoFileName || '';
+    logEntries = data.logEntries || [];
+    nextId = Math.max(0, ...logEntries.map(e => e.id||0)) + 1;
+    rubricScores = data.rubricScores || rubricScores;
+    RUBRIC.forEach(r => { if (!rubricScores[r.id]) rubricScores[r.id] = { mark:'', markCorrect:'', comment:'' }; });
+    overallComments.value = data.overallComments || '';
+    refreshRubricUI();
+    renderLog();
+    updateStatus();
+  }
+
+  // ---------------------------------------------------------------
+  // Auto-save: localStorage (instant, on every change) +
+  // periodic backup file download (fallback if cache is cleared)
+  // ---------------------------------------------------------------
+  let autosaveTimer = null;
+  function scheduleAutosave() {
+    autosaveDot.classList.add('pulsing');
+    autosaveText.textContent = 'Saving…';
+    clearTimeout(autosaveTimer);
+    autosaveTimer = setTimeout(() => {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(buildSnapshot()));
+        autosaveDot.classList.remove('pulsing');
+        autosaveText.textContent = 'Auto-saved ' + fmtClock(new Date());
+      } catch (err) {
+        autosaveText.textContent = 'Auto-save failed (storage full?)';
+      }
+    }, 400);
+  }
+  function fmtClock(d) {
+    return d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+  }
+
+  function downloadBackup() {
+    if (logEntries.length === 0 && Object.values(rubricScores).every(r => !r.mark && !r.comment && !r.markCorrect)) return;
+    const data = buildSnapshot();
+    const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    const vid = (data.meta.videoId || 'session').replace(/[^a-z0-9_\-]+/gi, '_');
+    a.download = `BLS_autobackup_${vid}_${Date.now()}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }
+  setInterval(downloadBackup, BACKUP_INTERVAL_MS);
+
+  // Restore from localStorage on load, if present
+  window.addEventListener('DOMContentLoaded', () => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const data = JSON.parse(raw);
+        if ((data.logEntries && data.logEntries.length) || data.meta?.videoId) {
+          const proceed = confirm('A previous auto-saved session was found in this browser. Load it? (Choose Cancel to start fresh.)');
+          if (proceed) {
+            restoreSnapshot(data);
+            alert('Previous session restored. Please re-open the matching video file (video content itself is not saved).');
+          }
+        }
+      }
+    } catch (err) { /* ignore corrupt autosave */ }
+  });
+
+  window.addEventListener('beforeunload', () => {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(buildSnapshot())); } catch (err) {}
+  });
+
+  // ---------------------------------------------------------------
+  // Save / load session (JSON) — manual, fully local
+  // ---------------------------------------------------------------
+  document.getElementById('saveSessionBtn').addEventListener('click', () => {
+    const data = buildSnapshot();
+    const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    const vid = data.meta.videoId || 'session';
+    a.download = `BLS_annotation_${vid}_${Date.now()}.json`;
+    a.click();
+  });
+
+  document.getElementById('loadSessionBtn').addEventListener('click', () => document.getElementById('loadSessionInput').click());
+  document.getElementById('loadSessionInput').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const data = JSON.parse(ev.target.result);
+        restoreSnapshot(data);
+        scheduleAutosave();
+        alert('Session loaded. Please re-open the matching video file (video content itself is not saved in the session file).');
+      } catch (err) {
+        alert('Could not read this session file: ' + err.message);
+      }
+    };
+    reader.readAsText(file);
+  });
+
+  // ---------------------------------------------------------------
+  // Export: Action log -> .xlsx (matches BLS_Action_Timestamps.xlsx columns)
+  // ---------------------------------------------------------------
+  document.getElementById('exportLogBtn').addEventListener('click', () => {
+    if (logEntries.length === 0) { alert('No logged actions to export yet.'); return; }
+    const videoId = document.getElementById('videoId').value || currentVideoFileName || '';
+
+    const rows = logEntries.map((e) => ({
+      'video ID': videoId,
+      'action': `${e.actionCode} ${e.actionLabel}`,
+      'start time': e.start,
+      'end time': e.end,
+      'Comments': e.comment
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(rows);
+    ws['!cols'] = [{wch:16},{wch:44},{wch:11},{wch:11},{wch:40}];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Action Log');
+    XLSX.writeFile(wb, `BLS_ActionLog_${videoId || 'export'}.xlsx`);
+  });
+
+  // ---------------------------------------------------------------
+  // Export: Rubric scores -> .xlsx (single student)
+  // ---------------------------------------------------------------
+  document.getElementById('exportRubricBtn').addEventListener('click', () => {
+    const assessor = document.getElementById('assessorName').value || '';
+    const videoId = document.getElementById('videoId').value || currentVideoFileName || '';
+
+    const rows = RUBRIC.map(r => ({
+      'Performance Criteria': r.title,
+      'Possible Mark': r.pts,
+      'Mark Achieved': rubricScores[r.id].mark,
+      'Correctly Performed': MARK_LABELS[rubricScores[r.id].markCorrect] || '',
+      'Comment': rubricScores[r.id].comment,
+    }));
+
+    let total = 0;
+    RUBRIC.forEach(r => {
+      const v = parseFloat(rubricScores[r.id].mark); if (!isNaN(v)) total += v;
+    });
+    rows.push({
+      'Performance Criteria': 'TOTAL',
+      'Possible Mark': 10,
+      'Mark Achieved': total,
+      'Correctly Performed': '',
+      'Comment': ''
+    });
+    rows.push({
+      'Performance Criteria': 'Additional comments (overall)',
+      'Possible Mark': '',
+      'Mark Achieved': '',
+      'Correctly Performed': '',
+      'Comment': overallComments.value
+    });
+
+    const ws = XLSX.utils.json_to_sheet(rows);
+    ws['!cols'] = [{wch:55},{wch:12},{wch:14},{wch:18},{wch:35}];
+
+    const metaWs = XLSX.utils.json_to_sheet([{
+      'Video ID': videoId,
+      'Assessor': assessor,
+      'Date exported': new Date().toLocaleString()
+    }]);
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, metaWs, 'Session Info');
+    XLSX.utils.book_append_sheet(wb, ws, 'Rubric Scores');
+    XLSX.writeFile(wb, `BLS_Rubric_${videoId || 'export'}.xlsx`);
+  });
+
+  // ---------------------------------------------------------------
+  // Init
+  // ---------------------------------------------------------------
+  renderLog();
+  updateTotals();
+  updateStatus();
+
+})();
+</script>
+
+</body>
+</html>
