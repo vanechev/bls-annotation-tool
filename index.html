@@ -292,26 +292,37 @@
     text-align: left;
     background: white;
     border: 1px solid var(--line);
+    border-left: 3px solid var(--group-color, var(--line));
     border-radius: 3px;
     padding: 5px 7px;
     font-size: 10.5px;
     cursor: pointer;
     line-height: 1.25;
   }
-  .quick-actions-grid button:hover { border-color: var(--blue); background: #eef4fa; }
-  .quick-actions-grid button.selected { border-color: var(--blue); background: var(--blue); color: white; }
+  .quick-actions-grid button:hover { border-color: var(--group-color, var(--blue)); background: #eef4fa; }
+  .quick-actions-grid button:hover { border-left-color: var(--group-color, var(--blue)); }
+  .quick-actions-grid button.selected { border-color: var(--group-color, var(--blue)); background: var(--group-color, var(--blue)); color: white; }
   .quick-actions-grid button.selected .code { color: white; }
-  .quick-actions-grid button .code { font-family: var(--mono); color: var(--blue); font-weight: 700; display:block; margin-bottom: 1px; font-size: 10px; }
+  .quick-actions-grid button .code { font-family: var(--mono); color: var(--group-color, var(--blue)); font-weight: 700; display:block; margin-bottom: 1px; font-size: 10px; }
 
-  .group-label {
-    font-size: 9.5px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    color: var(--muted);
-    margin: 9px 0 4px;
-    font-weight: 700;
+  .group-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 14px;
+    margin-bottom: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--line);
   }
-  .group-label:first-child { margin-top: 0; }
+  .group-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 10.5px;
+    color: var(--muted);
+  }
+  .group-legend-swatch {
+    width: 9px; height: 9px; border-radius: 2px; display: inline-block; flex-shrink: 0;
+  }
 
   /* ---------- Action logging form ---------- */
   .log-form {
@@ -662,6 +673,7 @@
         <span class="badge">click a code to select</span>
       </div>
       <div class="card-body">
+        <div class="group-legend" id="groupLegend"></div>
         <div class="quick-actions-grid" id="quickGrid"></div>
       </div>
     </div>
@@ -831,20 +843,36 @@
   const autosaveText = document.getElementById('autosaveText');
 
   // ---------------------------------------------------------------
-  // Populate quick-tag grid (primary action selector), grouped
+  // Populate quick-tag grid (primary action selector), colour-coded by theme
   // ---------------------------------------------------------------
-  let lastGroup = null;
+  const GROUP_COLORS = [
+    '#2563a8', // blue        — 1. Danger / Hazards
+    '#7c3aed', // violet      — 2. Conscious State
+    '#c2410c', // burnt orange— 3. Sends for Help
+    '#0f766e', // teal        — 4. Position / Open Airway
+    '#a16207', // gold        — 5. Look / Listen / Feel
+    '#be123c', // rose        — 6. Compressions
+    '#4d7c0f', // olive       — 7. Prepares for AED
+    '#0e7490', // cyan        — 8. AED Pad Placement
+    '#9333ea', // purple      — 9. AED Use
+  ];
+  const groupNames = [...new Set(ACTIONS.map(a => a.group))];
+  const groupColor = {};
+  groupNames.forEach((g, i) => { groupColor[g] = GROUP_COLORS[i % GROUP_COLORS.length]; });
+
+  const groupLegend = document.getElementById('groupLegend');
+  groupNames.forEach(g => {
+    const item = document.createElement('div');
+    item.className = 'group-legend-item';
+    item.innerHTML = `<span class="group-legend-swatch" style="background:${groupColor[g]}"></span>${g}`;
+    groupLegend.appendChild(item);
+  });
+
   ACTIONS.forEach(a => {
-    if (a.group !== lastGroup) {
-      const gl = document.createElement('div');
-      gl.className = 'group-label';
-      gl.style.gridColumn = '1 / -1';
-      gl.textContent = a.group;
-      quickGrid.appendChild(gl);
-      lastGroup = a.group;
-    }
     const btn = document.createElement('button');
     btn.dataset.code = a.code;
+    btn.style.setProperty('--group-color', groupColor[a.group]);
+    btn.title = a.group;
     btn.innerHTML = `<span class="code">${a.code}</span>${a.label}`;
     btn.addEventListener('click', () => selectAction(a.code));
     quickGrid.appendChild(btn);
