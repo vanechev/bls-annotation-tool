@@ -1,6 +1,6 @@
 # BLS Video Annotation Tool
 
-A browser-based tool for expert annotation of Basic Life Support (BLS) simulation videos, built for AI-enhanced feedback research in clinical education (NURS2208, OSCE Station 3: BLS & AED).
+A browser-based tool for expert annotation of Basic Life Support (BLS) simulation videos.
 
 **Live tool:** https://vanessaecheverria.net/bls-annotation-tool/
 
