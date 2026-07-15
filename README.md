@@ -29,3 +29,6 @@ index.html   — the entire tool (HTML/CSS/JS, single file)
 ## Development
 
 To modify the action taxonomy or rubric criteria, edit the `ACTIONS` and `RUBRIC` arrays near the top of the `<script>` block in `index.html`.
+
+###  Note: 
+Tool created with Claude.
