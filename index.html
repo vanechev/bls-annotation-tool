@@ -219,10 +219,44 @@
     font-family: var(--mono);
   }
 
-  .seekbar-wrap { padding: 4px 16px 14px; }
+  .seekbar-wrap { padding: 4px 16px 6px; }
+  .seekbar-track {
+    position: relative;
+  }
   input[type=range].seekbar {
     width: 100%;
     accent-color: var(--blue);
+    display: block;
+    position: relative;
+    z-index: 2;
+    margin: 0;
+  }
+  .timeline-marks {
+    position: absolute;
+    left: 0; right: 0; top: 50%;
+    height: 8px;
+    transform: translateY(-50%);
+    pointer-events: none;
+    z-index: 1;
+  }
+  .timeline-mark {
+    position: absolute;
+    top: 0;
+    width: 3px;
+    height: 8px;
+    background: var(--amber);
+    border-radius: 1px;
+    pointer-events: auto;
+    cursor: pointer;
+    transform: translateX(-50%);
+  }
+  .timeline-mark:hover { background: var(--red); height: 12px; top: -2px; }
+  .timeline-mark-label {
+    font-size: 10px;
+    color: var(--muted);
+    padding: 0 16px;
+    display: flex;
+    justify-content: space-between;
   }
 
   /* ---------- Tabs ---------- */
@@ -251,30 +285,30 @@
   /* ---------- Quick-tag action grid (primary selector) ---------- */
   .quick-actions-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-    gap: 8px;
+    grid-template-columns: repeat(auto-fill, minmax(108px, 1fr));
+    gap: 5px;
   }
   .quick-actions-grid button {
     text-align: left;
     background: white;
     border: 1px solid var(--line);
     border-radius: 3px;
-    padding: 8px 10px;
-    font-size: 11.5px;
+    padding: 5px 7px;
+    font-size: 10.5px;
     cursor: pointer;
-    line-height: 1.35;
+    line-height: 1.25;
   }
   .quick-actions-grid button:hover { border-color: var(--blue); background: #eef4fa; }
   .quick-actions-grid button.selected { border-color: var(--blue); background: var(--blue); color: white; }
   .quick-actions-grid button.selected .code { color: white; }
-  .quick-actions-grid button .code { font-family: var(--mono); color: var(--blue); font-weight: 700; display:block; margin-bottom: 2px; }
+  .quick-actions-grid button .code { font-family: var(--mono); color: var(--blue); font-weight: 700; display:block; margin-bottom: 1px; font-size: 10px; }
 
   .group-label {
-    font-size: 10.5px;
+    font-size: 9.5px;
     text-transform: uppercase;
-    letter-spacing: 0.6px;
+    letter-spacing: 0.5px;
     color: var(--muted);
-    margin: 14px 0 6px;
+    margin: 9px 0 4px;
     font-weight: 700;
   }
   .group-label:first-child { margin-top: 0; }
@@ -332,6 +366,27 @@
   }
   .add-row-btn:hover { background: #123a63; }
   .add-row-btn:disabled { background: var(--line); color: var(--muted); cursor: not-allowed; }
+  .add-row-btn.editing { background: var(--amber); }
+  .add-row-btn.editing:hover { background: #9c6408; }
+
+  .form-btn-row { display: flex; gap: 8px; }
+  .form-btn-row .add-row-btn { flex: 1; }
+  .cancel-edit-btn {
+    background: white;
+    border: 1px solid var(--line);
+    color: var(--muted);
+    padding: 10px 14px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 12.5px;
+    display: none;
+  }
+  .cancel-edit-btn.show { display: inline-block; }
+  .cancel-edit-btn:hover { border-color: var(--red); color: var(--red); }
+
+  table.log-table tr.editing-row td { background: #fdf3e0; }
+  .edit-btn { background: none; border: none; color: var(--blue); cursor: pointer; font-size: 12.5px; margin-right: 6px; }
+  .edit-btn:hover { color: var(--blue-dark); text-decoration: underline; }
 
   /* ---------- Log table ---------- */
   .log-table-wrap { max-height: 360px; overflow-y: auto; border-top: 1px solid var(--line); }
@@ -547,7 +602,10 @@
       </div>
 
       <div class="seekbar-wrap">
-        <input type="range" class="seekbar" id="seekbar" min="0" max="100" value="0" step="0.01">
+        <div class="seekbar-track">
+          <input type="range" class="seekbar" id="seekbar" min="0" max="100" value="0" step="0.01">
+          <div class="timeline-marks" id="timelineMarks"></div>
+        </div>
       </div>
 
       <div class="transport">
@@ -568,6 +626,34 @@
         <div class="spacer"></div>
         <span class="kbd-hint"><kbd>Space</kbd> play/pause &nbsp; <kbd>&larr;</kbd>/<kbd>&rarr;</kbd> &plusmn;1s &nbsp; <kbd>M</kbd> mark start</span>
       </div>
+
+      <div class="card-body" style="padding-top:0; border-top:1px solid var(--line)">
+        <div class="selected-action-banner empty" id="selectedBanner" style="margin-top:14px">No action selected &mdash; pick one below</div>
+        <div class="row2" style="margin-top:10px">
+          <div class="field">
+            <label>Start time</label>
+            <div class="grp">
+              <input type="text" id="startTime" placeholder="00:00:00" style="font-family:var(--mono)">
+              <button class="file-btn small ghost" id="setStartBtn">Use current</button>
+            </div>
+          </div>
+          <div class="field">
+            <label>End time</label>
+            <div class="grp">
+              <input type="text" id="endTime" placeholder="00:00:00" style="font-family:var(--mono)">
+              <button class="file-btn small ghost" id="setEndBtn">Use current</button>
+            </div>
+          </div>
+        </div>
+        <div class="field" style="margin-top:10px">
+          <label>Comments</label>
+          <textarea id="commentBox" placeholder="Optional notes for feedback / AI training reference&hellip;"></textarea>
+        </div>
+        <div class="form-btn-row" style="margin-top:10px">
+          <button class="add-row-btn" id="addLogBtn" disabled>+ Add to log</button>
+          <button class="cancel-edit-btn" id="cancelEditBtn">Cancel edit</button>
+        </div>
+      </div>
     </div>
 
     <div class="card" style="margin-top:16px">
@@ -578,34 +664,13 @@
       <div class="card-body">
         <div class="quick-actions-grid" id="quickGrid"></div>
       </div>
+    </div>
 
-      <div class="card-body" style="padding-top:0">
-        <div class="log-form">
-          <div class="selected-action-banner empty" id="selectedBanner">No action selected &mdash; click one above</div>
-          <div class="row2">
-            <div class="field">
-              <label>Start time</label>
-              <div class="grp">
-                <input type="text" id="startTime" placeholder="00:00:00" style="font-family:var(--mono)">
-                <button class="file-btn small ghost" id="setStartBtn">Use current</button>
-              </div>
-            </div>
-            <div class="field">
-              <label>End time</label>
-              <div class="grp">
-                <input type="text" id="endTime" placeholder="00:00:00" style="font-family:var(--mono)">
-                <button class="file-btn small ghost" id="setEndBtn">Use current</button>
-              </div>
-            </div>
-          </div>
-          <div class="field">
-            <label>Comments</label>
-            <textarea id="commentBox" placeholder="Optional notes for feedback / AI training reference&hellip;"></textarea>
-          </div>
-          <button class="add-row-btn" id="addLogBtn" disabled>+ Add to log</button>
-        </div>
+    <div class="card" style="margin-top:16px">
+      <div class="card-header">
+        <h2>Action log</h2>
+        <span class="badge" id="logCountBadge">0 entries</span>
       </div>
-
       <div class="log-table-wrap">
         <table class="log-table" id="logTable">
           <thead>
@@ -749,8 +814,13 @@
   const endTime = document.getElementById('endTime');
   const commentBox = document.getElementById('commentBox');
   const addLogBtn = document.getElementById('addLogBtn');
+  const cancelEditBtn = document.getElementById('cancelEditBtn');
   const logTableBody = document.getElementById('logTableBody');
   const emptyLogNote = document.getElementById('emptyLogNote');
+  const logCountBadge = document.getElementById('logCountBadge');
+  const timelineMarks = document.getElementById('timelineMarks');
+
+  let editingEntryId = null; // null = adding new; otherwise id of entry being edited
 
   const rubricBody = document.getElementById('rubricBody');
   const totalScoreEl = document.getElementById('totalScore');
@@ -780,15 +850,18 @@
     quickGrid.appendChild(btn);
   });
 
-  function selectAction(code) {
+  function selectAction(code, opts) {
+    opts = opts || {};
     selectedActionCode = code;
     const action = ACTIONS.find(a => a.code === code);
     quickGrid.querySelectorAll('button').forEach(b => b.classList.toggle('selected', b.dataset.code === code));
     selectedBanner.classList.remove('empty');
     selectedBanner.innerHTML = `<span class="code-chip">${action.code}</span> ${action.label}`;
-    // Reset start/end time whenever a new action is selected
-    startTime.value = '';
-    endTime.value = '';
+    // Reset start/end time whenever a new action is selected (unless restoring for edit)
+    if (!opts.keepTimes) {
+      startTime.value = '';
+      endTime.value = '';
+    }
     addLogBtn.disabled = false;
   }
 
@@ -834,6 +907,7 @@
   });
   player.addEventListener('loadedmetadata', () => {
     timecode.textContent = `${fmtTime(player.currentTime)} / ${fmtTime(player.duration)}`;
+    renderTimelineMarks();
   });
 
   seekbar.addEventListener('input', () => {
@@ -872,7 +946,7 @@
   document.getElementById('setEndBtn').addEventListener('click', () => endTime.value = fmtTime(player.currentTime));
 
   // ---------------------------------------------------------------
-  // Action log
+  // Action log (add + edit)
   // ---------------------------------------------------------------
   addLogBtn.addEventListener('click', () => {
     if (!selectedActionCode) return;
@@ -882,36 +956,84 @@
     const en = endTime.value.trim();
     if (!s) { alert('Please set a start time (use "Use current" or type manually).'); return; }
 
-    logEntries.push({
-      id: nextId++,
-      actionCode: action.code,
-      actionLabel: action.label,
-      start: s,
-      end: en || s,
-      comment: commentBox.value.trim()
-    });
-    commentBox.value = '';
+    if (editingEntryId !== null) {
+      // Update existing entry
+      const entry = logEntries.find(e => e.id === editingEntryId);
+      if (entry) {
+        entry.actionCode = action.code;
+        entry.actionLabel = action.label;
+        entry.start = s;
+        entry.end = en || s;
+        entry.comment = commentBox.value.trim();
+      }
+      exitEditMode();
+    } else {
+      // Add new entry
+      logEntries.push({
+        id: nextId++,
+        actionCode: action.code,
+        actionLabel: action.label,
+        start: s,
+        end: en || s,
+        comment: commentBox.value.trim()
+      });
+      commentBox.value = '';
+      entriesSinceBackup++;
+      if (entriesSinceBackup >= BACKUP_EVERY_N_ENTRIES) {
+        downloadBackup();
+        entriesSinceBackup = 0;
+      }
+    }
     renderLog();
     updateStatus();
-    entriesSinceBackup++;
     scheduleAutosave();
-    if (entriesSinceBackup >= BACKUP_EVERY_N_ENTRIES) {
-      downloadBackup();
-      entriesSinceBackup = 0;
-    }
+  });
+
+  function enterEditMode(id) {
+    const entry = logEntries.find(e => e.id === id);
+    if (!entry) return;
+    editingEntryId = id;
+    selectAction(entry.actionCode, {keepTimes: true});
+    startTime.value = entry.start;
+    endTime.value = entry.end;
+    commentBox.value = entry.comment || '';
+    addLogBtn.textContent = 'Update entry';
+    addLogBtn.classList.add('editing');
+    cancelEditBtn.classList.add('show');
+    renderLog();
+    document.querySelector('.selected-action-banner').scrollIntoView({behavior:'smooth', block:'center'});
+  }
+
+  function exitEditMode() {
+    editingEntryId = null;
+    addLogBtn.textContent = '+ Add to log';
+    addLogBtn.classList.remove('editing');
+    cancelEditBtn.classList.remove('show');
+    commentBox.value = '';
+  }
+
+  cancelEditBtn.addEventListener('click', () => {
+    exitEditMode();
+    renderLog();
   });
 
   function renderLog() {
     logTableBody.innerHTML = '';
     emptyLogNote.style.display = logEntries.length === 0 ? 'block' : 'none';
-    logEntries.forEach(entry => {
+    if (logCountBadge) logCountBadge.textContent = `${logEntries.length} ${logEntries.length === 1 ? 'entry' : 'entries'}`;
+
+    // Sort a display copy by start time for readability, but keep original entries intact
+    const sorted = [...logEntries].sort((a,b) => (parseTime(a.start)||0) - (parseTime(b.start)||0));
+
+    sorted.forEach(entry => {
       const tr = document.createElement('tr');
+      if (entry.id === editingEntryId) tr.classList.add('editing-row');
       tr.innerHTML = `
         <td><span class="code-chip">${entry.actionCode}</span><div style="margin-top:3px">${entry.actionLabel}</div></td>
         <td><span class="time-link" data-t="${entry.start}">${entry.start}</span></td>
         <td><span class="time-link" data-t="${entry.end}">${entry.end}</span></td>
         <td>${entry.comment ? entry.comment.replace(/</g,'&lt;') : '<span style="color:var(--muted)">&mdash;</span>'}</td>
-        <td><button class="del-btn" data-id="${entry.id}" title="Delete">&times;</button></td>
+        <td><button class="edit-btn" data-id="${entry.id}" title="Edit">Edit</button><button class="del-btn" data-id="${entry.id}" title="Delete">&times;</button></td>
       `;
       logTableBody.appendChild(tr);
     });
@@ -922,19 +1044,47 @@
         if (t !== null) player.currentTime = t;
       });
     });
+    logTableBody.querySelectorAll('.edit-btn').forEach(el => {
+      el.addEventListener('click', () => enterEditMode(parseInt(el.dataset.id)));
+    });
     logTableBody.querySelectorAll('.del-btn').forEach(el => {
       el.addEventListener('click', () => {
-        logEntries = logEntries.filter(e => e.id !== parseInt(el.dataset.id));
+        const id = parseInt(el.dataset.id);
+        if (id === editingEntryId) exitEditMode();
+        logEntries = logEntries.filter(e => e.id !== id);
         renderLog();
         updateStatus();
         scheduleAutosave();
       });
     });
+
+    renderTimelineMarks();
   }
 
   function updateStatus() {
     const vname = currentVideoFileName ? currentVideoFileName : 'No video loaded';
     statusLine.innerHTML = `${vname} &middot; <strong>${logEntries.length}</strong> actions logged`;
+  }
+
+  // ---------------------------------------------------------------
+  // Timeline markers on the seekbar showing where annotations sit
+  // ---------------------------------------------------------------
+  function renderTimelineMarks() {
+    if (!timelineMarks) return;
+    timelineMarks.innerHTML = '';
+    const duration = player.duration;
+    if (!duration || !isFinite(duration) || duration <= 0) return;
+    logEntries.forEach(entry => {
+      const t = parseTime(entry.start);
+      if (t === null) return;
+      const pct = Math.min(100, Math.max(0, (t / duration) * 100));
+      const mark = document.createElement('div');
+      mark.className = 'timeline-mark';
+      mark.style.left = pct + '%';
+      mark.title = `${entry.actionCode} — ${entry.actionLabel} @ ${entry.start}`;
+      mark.addEventListener('click', () => { player.currentTime = t; });
+      timelineMarks.appendChild(mark);
+    });
   }
 
   // ---------------------------------------------------------------
