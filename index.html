@@ -80,14 +80,8 @@
     gap: 18px;
     align-items: start;
   }
-  .row-bottom {
-    display: grid;
-    grid-template-columns: 1.35fr 1fr;
-    gap: 18px;
-    align-items: start;
-  }
   @media (max-width: 1100px) {
-    .row-top, .row-bottom { grid-template-columns: 1fr; }
+    .row-top { grid-template-columns: 1fr; }
   }
 
   /* ---------- Top action bar (Save & Export) ---------- */
@@ -246,7 +240,7 @@
     font-family: var(--mono);
   }
 
-  .seekbar-wrap { padding: 4px 16px 6px; }
+  .seekbar-wrap { padding: 4px 16px 22px; }
   .seekbar-track {
     position: relative;
   }
@@ -260,24 +254,27 @@
   }
   .timeline-marks {
     position: absolute;
-    left: 0; right: 0; top: 50%;
-    height: 8px;
-    transform: translateY(-50%);
+    left: 0; right: 0; top: 100%;
+    height: 14px;
+    margin-top: 3px;
     pointer-events: none;
     z-index: 1;
   }
   .timeline-mark {
     position: absolute;
     top: 0;
-    width: 3px;
-    height: 8px;
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
     background: var(--amber);
-    border-radius: 1px;
+    border: 2px solid white;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.35);
     pointer-events: auto;
     cursor: pointer;
     transform: translateX(-50%);
+    transition: transform 0.1s;
   }
-  .timeline-mark:hover { background: var(--red); height: 12px; top: -2px; }
+  .timeline-mark:hover { transform: translateX(-50%) scale(1.35); z-index: 5; }
   .timeline-mark-label {
     font-size: 10px;
     color: var(--muted);
@@ -391,6 +388,47 @@
   .field textarea { resize: vertical; min-height: 44px; }
   .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 
+  /* ---------- Compact single-row time entry ---------- */
+  .time-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .time-row label {
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: var(--muted);
+    margin-right: 2px;
+  }
+  .time-row input[type=text] {
+    width: 78px;
+    font-family: var(--mono);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: 5px 6px;
+    font-size: 12px;
+    background: white;
+    color: var(--ink);
+  }
+  .time-row .now-btn {
+    background: #eef4fa;
+    border: 1px solid var(--blue);
+    color: var(--blue);
+    padding: 5px 8px;
+    border-radius: 3px;
+    font-size: 10.5px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .time-row .now-btn:hover { background: var(--blue); color: white; }
+  .time-row .add-row-btn {
+    margin-left: auto;
+    padding: 7px 16px;
+    font-size: 12px;
+  }
+
   .add-row-btn {
     background: var(--blue-dark);
     color: white;
@@ -460,10 +498,16 @@
   .empty-note { padding: 20px; text-align: center; color: var(--muted); font-size: 12.5px; }
 
   /* ---------- Rubric ---------- */
+  .rubric-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 10px;
+    align-items: start;
+  }
   .rubric-item {
     border: 1px solid var(--line);
     border-radius: 4px;
-    margin-bottom: 10px;
+    margin-bottom: 0;
     overflow: hidden;
   }
   .rubric-item-head {
@@ -629,7 +673,7 @@
 <div class="layout">
 
   <div class="row-top">
-  <!-- LEFT: Video + logging -->
+  <!-- LEFT: Video, timeline, compact time entry, action log -->
   <div>
     <div class="card">
       <div class="card-header">
@@ -674,43 +718,31 @@
       </div>
 
       <div class="card-body" style="padding-top:0; border-top:1px solid var(--line)">
-        <div class="selected-action-banner empty" id="selectedBanner" style="margin-top:14px">No action selected &mdash; pick one below</div>
-        <div class="row2" style="margin-top:10px">
-          <div class="field">
-            <label>Start time</label>
-            <div class="grp">
-              <input type="text" id="startTime" placeholder="00:00:00" style="font-family:var(--mono)">
-              <button class="file-btn small ghost" id="setStartBtn">Use current</button>
-            </div>
-          </div>
-          <div class="field">
-            <label>End time</label>
-            <div class="grp">
-              <input type="text" id="endTime" placeholder="00:00:00" style="font-family:var(--mono)">
-              <button class="file-btn small ghost" id="setEndBtn">Use current</button>
-            </div>
-          </div>
+        <div class="selected-action-banner empty" id="selectedBanner" style="margin-top:14px">No action selected &mdash; pick one from the grid</div>
+        <div class="time-row" style="margin-top:10px">
+          <label>Start</label>
+          <input type="text" id="startTime" placeholder="00:00:00">
+          <button class="now-btn" id="setStartBtn">Now</button>
+          <label style="margin-left:6px">End</label>
+          <input type="text" id="endTime" placeholder="00:00:00">
+          <button class="now-btn" id="setEndBtn">Now</button>
+          <button class="add-row-btn" id="addLogBtn" disabled>+ Add</button>
         </div>
-        <div class="field" style="margin-top:10px">
-          <label>Comments</label>
-          <textarea id="commentBox" placeholder="Optional notes for feedback / AI training reference&hellip;"></textarea>
+        <div class="field" style="margin-top:8px">
+          <textarea id="commentBox" placeholder="Optional comment&hellip;" style="min-height:34px"></textarea>
         </div>
-        <div class="form-btn-row" style="margin-top:10px">
-          <button class="add-row-btn" id="addLogBtn" disabled>+ Add to log</button>
+        <div class="form-btn-row" style="margin-top:6px" id="cancelEditRow">
           <button class="cancel-edit-btn" id="cancelEditBtn">Cancel edit</button>
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- RIGHT: Action log / timeline list -->
-  <div>
-    <div class="card">
+    <div class="card" style="margin-top:16px">
       <div class="card-header">
         <h2>Action log</h2>
         <span class="badge" id="logCountBadge">0 entries</span>
       </div>
-      <div class="log-table-wrap" style="max-height:520px">
+      <div class="log-table-wrap" style="max-height:320px">
         <table class="log-table" id="logTable">
           <thead>
             <tr>
@@ -727,10 +759,8 @@
       </div>
     </div>
   </div>
-  </div>
 
-  <div class="row-bottom">
-  <!-- LEFT: Action tag grid -->
+  <!-- RIGHT: Action tag grid -->
   <div>
     <div class="card">
       <div class="card-header">
@@ -743,29 +773,27 @@
       </div>
     </div>
   </div>
+  </div>
 
-  <!-- RIGHT: Rubric -->
-  <div>
-    <div class="card">
-      <div class="card-header">
-        <h2>OSCE Rubric &mdash; Station 3: BLS &amp; AED</h2>
-        <span class="badge">10 marks</span>
-      </div>
-      <div class="card-body" style="max-height: 480px; overflow-y:auto;">
-        <div id="rubricBody" style="padding-top:2px;"></div>
-        <div class="field" style="margin-top:6px">
-          <label>Additional comments (overall)</label>
-          <textarea id="overallComments" placeholder="General feedback on this student's performance not tied to a specific criterion&hellip;" style="min-height:70px"></textarea>
-        </div>
-      </div>
-      <div class="rubric-total">
-        <div class="totals">
-          <div><span class="label">Total</span><span class="value" id="totalScore">0.0</span></div>
-        </div>
-        <div style="font-size:10px;color:#a9b6c1">/ 10.0</div>
+  <!-- FULL WIDTH: OSCE Rubric -->
+  <div class="card">
+    <div class="card-header">
+      <h2>OSCE Rubric &mdash; Station 3: BLS &amp; AED</h2>
+      <span class="badge">10 marks</span>
+    </div>
+    <div class="card-body" style="max-height: 420px; overflow-y:auto;">
+      <div id="rubricBody" class="rubric-grid" style="padding-top:2px;"></div>
+      <div class="field" style="margin-top:6px">
+        <label>Additional comments (overall)</label>
+        <textarea id="overallComments" placeholder="General feedback on this student's performance not tied to a specific criterion&hellip;" style="min-height:70px"></textarea>
       </div>
     </div>
-  </div>
+    <div class="rubric-total">
+      <div class="totals">
+        <div><span class="label">Total</span><span class="value" id="totalScore">0.0</span></div>
+      </div>
+      <div style="font-size:10px;color:#a9b6c1">/ 10.0</div>
+    </div>
   </div>
 
 </div>
