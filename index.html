@@ -311,10 +311,43 @@
   .tab-panel { display: none; }
   .tab-panel.active { display: block; }
 
-  /* ---------- Quick-tag action grid (primary selector) ---------- */
+  /* ---------- Quick-tag action grid (primary selector), grouped by rubric heading ---------- */
+  .action-groups-wrap {
+    max-height: 560px;
+    overflow-y: auto;
+  }
+  .action-group-section { margin-bottom: 10px; }
+  .action-group-section:last-child { margin-bottom: 0; }
+  .action-group-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 7px;
+    border-radius: 3px;
+    background: var(--group-color, var(--line));
+    color: white;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.1px;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    margin-bottom: 5px;
+  }
+  .action-group-header .count {
+    margin-left: auto;
+    background: rgba(255,255,255,0.25);
+    padding: 1px 6px;
+    border-radius: 8px;
+    font-size: 9px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .action-group-header .count.zero { background: rgba(255,255,255,0.12); opacity: 0.75; }
+
   .quick-actions-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(108px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
     gap: 5px;
   }
   .quick-actions-grid button {
@@ -333,25 +366,6 @@
   .quick-actions-grid button.selected { border-color: var(--group-color, var(--blue)); background: var(--group-color, var(--blue)); color: white; }
   .quick-actions-grid button.selected .code { color: white; }
   .quick-actions-grid button .code { font-family: var(--mono); color: var(--group-color, var(--blue)); font-weight: 700; display:block; margin-bottom: 1px; font-size: 10px; }
-
-  .group-legend {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px 14px;
-    margin-bottom: 10px;
-    padding-bottom: 10px;
-    border-bottom: 1px solid var(--line);
-  }
-  .group-legend-item {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    font-size: 10.5px;
-    color: var(--muted);
-  }
-  .group-legend-swatch {
-    width: 9px; height: 9px; border-radius: 2px; display: inline-block; flex-shrink: 0;
-  }
 
   /* ---------- Action logging form ---------- */
   .log-form {
@@ -774,8 +788,7 @@
         <span class="badge">click a code to select</span>
       </div>
       <div class="card-body">
-        <div class="group-legend" id="groupLegend"></div>
-        <div class="quick-actions-grid" id="quickGrid"></div>
+        <div class="action-groups-wrap" id="actionGroupsWrap"></div>
       </div>
 
       <div class="card-body" style="padding-top:0; border-top:1px solid var(--line)">
@@ -909,7 +922,7 @@
   const rateSelect = document.getElementById('rateSelect');
   const statusLine = document.getElementById('statusLine');
 
-  const quickGrid = document.getElementById('quickGrid');
+  const actionGroupsWrap = document.getElementById('actionGroupsWrap');
   const selectedBanner = document.getElementById('selectedBanner');
   const startTime = document.getElementById('startTime');
   const endTime = document.getElementById('endTime');
@@ -949,29 +962,56 @@
   const groupColor = {};
   groupNames.forEach((g, i) => { groupColor[g] = GROUP_COLORS[i % GROUP_COLORS.length]; });
 
-  const groupLegend = document.getElementById('groupLegend');
+  const groupCountEls = {}; // group name -> count <span> element
+
   groupNames.forEach(g => {
-    const item = document.createElement('div');
-    item.className = 'group-legend-item';
-    item.innerHTML = `<span class="group-legend-swatch" style="background:${groupColor[g]}"></span>${g}`;
-    groupLegend.appendChild(item);
+    const section = document.createElement('div');
+    section.className = 'action-group-section';
+
+    const header = document.createElement('div');
+    header.className = 'action-group-header';
+    header.style.setProperty('--group-color', groupColor[g]);
+    header.innerHTML = `<span>${g}</span><span class="count zero" data-group="${g}">0 tagged</span>`;
+    section.appendChild(header);
+    groupCountEls[g] = header.querySelector('.count');
+
+    const grid = document.createElement('div');
+    grid.className = 'quick-actions-grid';
+    ACTIONS.filter(a => a.group === g).forEach(a => {
+      const btn = document.createElement('button');
+      btn.dataset.code = a.code;
+      btn.style.setProperty('--group-color', groupColor[a.group]);
+      btn.title = a.label;
+      btn.innerHTML = `<span class="code">${a.code}</span>${a.label}`;
+      btn.addEventListener('click', () => selectAction(a.code));
+      grid.appendChild(btn);
+    });
+    section.appendChild(grid);
+
+    actionGroupsWrap.appendChild(section);
   });
 
-  ACTIONS.forEach(a => {
-    const btn = document.createElement('button');
-    btn.dataset.code = a.code;
-    btn.style.setProperty('--group-color', groupColor[a.group]);
-    btn.title = a.group;
-    btn.innerHTML = `<span class="code">${a.code}</span>${a.label}`;
-    btn.addEventListener('click', () => selectAction(a.code));
-    quickGrid.appendChild(btn);
-  });
+  function updateGroupCounts() {
+    const counts = {};
+    logEntries.forEach(e => {
+      const action = ACTIONS.find(a => a.code === e.actionCode);
+      if (!action) return;
+      counts[action.group] = (counts[action.group] || 0) + 1;
+    });
+    groupNames.forEach(g => {
+      const n = counts[g] || 0;
+      const el = groupCountEls[g];
+      if (!el) return;
+      el.textContent = `${n} tagged`;
+      el.classList.toggle('zero', n === 0);
+    });
+  }
 
   function selectAction(code, opts) {
     opts = opts || {};
     selectedActionCode = code;
     const action = ACTIONS.find(a => a.code === code);
-    quickGrid.querySelectorAll('button').forEach(b => b.classList.toggle('selected', b.dataset.code === code));
+    actionGroupsWrap.querySelectorAll('.quick-actions-grid button').forEach(b => b.classList.toggle('selected', b.dataset.code === code));
     selectedBanner.classList.remove('empty');
     selectedBanner.innerHTML = `<span class="code-chip">${action.code}</span> ${action.label}`;
     // Reset start/end time whenever a new action is selected (unless restoring for edit)
@@ -1180,6 +1220,7 @@
     });
 
     renderTimelineMarks();
+    updateGroupCounts();
   }
 
   function updateStatus() {
