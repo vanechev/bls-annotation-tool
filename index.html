@@ -717,24 +717,6 @@
         <span class="kbd-hint"><kbd>Space</kbd> play/pause &nbsp; <kbd>&larr;</kbd>/<kbd>&rarr;</kbd> &plusmn;1s &nbsp; <kbd>M</kbd> mark start</span>
       </div>
 
-      <div class="card-body" style="padding-top:0; border-top:1px solid var(--line)">
-        <div class="selected-action-banner empty" id="selectedBanner" style="margin-top:14px">No action selected &mdash; pick one from the grid</div>
-        <div class="time-row" style="margin-top:10px">
-          <label>Start</label>
-          <input type="text" id="startTime" placeholder="00:00:00">
-          <button class="now-btn" id="setStartBtn">Now</button>
-          <label style="margin-left:6px">End</label>
-          <input type="text" id="endTime" placeholder="00:00:00">
-          <button class="now-btn" id="setEndBtn">Now</button>
-          <button class="add-row-btn" id="addLogBtn" disabled>+ Add</button>
-        </div>
-        <div class="field" style="margin-top:8px">
-          <textarea id="commentBox" placeholder="Optional comment&hellip;" style="min-height:34px"></textarea>
-        </div>
-        <div class="form-btn-row" style="margin-top:6px" id="cancelEditRow">
-          <button class="cancel-edit-btn" id="cancelEditBtn">Cancel edit</button>
-        </div>
-      </div>
     </div>
 
     <div class="card" style="margin-top:16px">
@@ -770,6 +752,25 @@
       <div class="card-body">
         <div class="group-legend" id="groupLegend"></div>
         <div class="quick-actions-grid" id="quickGrid"></div>
+      </div>
+
+      <div class="card-body" style="padding-top:0; border-top:1px solid var(--line)">
+        <div class="selected-action-banner empty" id="selectedBanner" style="margin-top:14px">No action selected &mdash; pick one from the grid</div>
+        <div class="time-row" style="margin-top:10px">
+          <label>Start</label>
+          <input type="text" id="startTime" placeholder="00:00:00">
+          <button class="now-btn" id="setStartBtn">Now</button>
+          <label style="margin-left:6px">End</label>
+          <input type="text" id="endTime" placeholder="00:00:00">
+          <button class="now-btn" id="setEndBtn">Now</button>
+          <button class="add-row-btn" id="addLogBtn" disabled>+ Add</button>
+        </div>
+        <div class="field" style="margin-top:8px">
+          <textarea id="commentBox" placeholder="Optional comment&hellip;" style="min-height:34px"></textarea>
+        </div>
+        <div class="form-btn-row" style="margin-top:6px" id="cancelEditRow">
+          <button class="cancel-edit-btn" id="cancelEditBtn">Cancel edit</button>
+        </div>
       </div>
     </div>
   </div>
