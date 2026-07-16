@@ -76,7 +76,7 @@
   }
   .row-top {
     display: grid;
-    grid-template-columns: 1.1fr 1fr 0.9fr;
+    grid-template-columns: 1.2fr 1fr 0.7fr;
     gap: 16px;
     align-items: start;
   }
@@ -313,7 +313,7 @@
 
   /* ---------- Quick-tag action grid (primary selector), grouped by rubric heading ---------- */
   .action-groups-wrap {
-    max-height: 560px;
+    max-height: 460px;
     overflow-y: auto;
   }
   .action-group-section { margin-bottom: 10px; }
@@ -574,20 +574,20 @@
   .mark-toggle {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 3px;
-    margin-bottom: 5px;
+    gap: 2px;
+    margin-bottom: 4px;
   }
   .mark-toggle button {
-    padding: 4px 3px;
+    padding: 3px 2px;
     border: 1px solid var(--line);
     background: white;
     border-radius: 3px;
     cursor: pointer;
-    font-size: 9px;
+    font-size: 8px;
     font-weight: 600;
-    letter-spacing: 0.1px;
+    letter-spacing: 0;
     text-align: center;
-    line-height: 1.25;
+    line-height: 1.2;
   }
   .mark-toggle button[data-v="correct"].active { background: var(--green); color: white; border-color: var(--green); }
   .mark-toggle button[data-v="partial"].active { background: var(--amber); color: white; border-color: var(--amber); }
@@ -802,12 +802,9 @@
         <h2>Select action</h2>
         <span class="badge">click a code to select</span>
       </div>
-      <div class="card-body">
-        <div class="action-groups-wrap" id="actionGroupsWrap"></div>
-      </div>
 
-      <div class="card-body" style="padding-top:0; border-top:1px solid var(--line)">
-        <div class="selected-action-banner empty" id="selectedBanner" style="margin-top:14px">No action selected &mdash; pick one from the grid</div>
+      <div class="card-body" style="padding-bottom:0">
+        <div class="selected-action-banner empty" id="selectedBanner">No action selected &mdash; pick one below</div>
         <div class="time-row" style="margin-top:10px">
           <label>Start</label>
           <input type="text" id="startTime" placeholder="00:00:00">
@@ -823,6 +820,10 @@
         <div class="form-btn-row" style="margin-top:6px" id="cancelEditRow">
           <button class="cancel-edit-btn" id="cancelEditBtn">Cancel edit</button>
         </div>
+      </div>
+
+      <div class="card-body" style="padding-top:10px; border-top:1px solid var(--line); margin-top:10px">
+        <div class="action-groups-wrap" id="actionGroupsWrap"></div>
       </div>
     </div>
   </div>
