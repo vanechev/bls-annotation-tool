@@ -76,12 +76,17 @@
   }
   .row-top {
     display: grid;
-    grid-template-columns: 1.35fr 1fr;
-    gap: 18px;
+    grid-template-columns: 1.1fr 1fr 0.9fr;
+    gap: 16px;
     align-items: start;
   }
-  @media (max-width: 1100px) {
+  @media (max-width: 1300px) {
+    .row-top { grid-template-columns: 1fr 1fr; }
+    .row-top .col-rubric { grid-column: 1 / -1; }
+  }
+  @media (max-width: 800px) {
     .row-top { grid-template-columns: 1fr; }
+    .row-top .col-rubric { grid-column: auto; }
   }
 
   /* ---------- Top action bar (Save & Export) ---------- */
@@ -499,10 +504,9 @@
 
   /* ---------- Rubric ---------- */
   .rubric-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-    gap: 10px;
-    align-items: start;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
   }
   .rubric-item {
     border: 1px solid var(--line);
@@ -511,52 +515,72 @@
     overflow: hidden;
   }
   .rubric-item-head {
-    padding: 9px 12px;
+    padding: 6px 8px;
     background: #f7f9fa;
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    gap: 10px;
+    gap: 6px;
   }
-  .rubric-item-head .title { font-size: 12.5px; font-weight: 600; line-height: 1.4; }
-  .rubric-item-head .pts { font-family: var(--mono); font-size: 11px; color: var(--muted); white-space: nowrap; }
-  .rubric-item-body { padding: 10px 12px; }
+  .rubric-item-head .title { font-size: 10.5px; font-weight: 600; line-height: 1.3; }
+  .rubric-item-head .pts { font-family: var(--mono); font-size: 10px; color: var(--muted); white-space: nowrap; }
+  .rubric-item-body { padding: 6px 8px; }
 
   .rubric-row {
-    display: grid;
-    grid-template-columns: 90px 1fr;
-    gap: 10px;
-    align-items: start;
-    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 5px;
   }
   .rubric-row input[type=number] {
-    width: 100%; font-family: var(--mono); border: 1px solid var(--line); border-radius: 3px; padding: 6px 7px; font-size: 12.5px;
+    width: 44px;
+    flex-shrink: 0;
+    font-family: var(--mono);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: 4px 5px;
+    font-size: 11px;
+    text-align: center;
   }
+  .rubric-row .pts-of { font-size: 9.5px; color: var(--muted); white-space: nowrap; }
 
   .mark-toggle {
     display: flex;
-    gap: 6px;
-    margin-bottom: 8px;
+    gap: 3px;
+    margin-bottom: 5px;
   }
   .mark-toggle button {
     flex: 1;
-    padding: 7px;
+    padding: 4px 2px;
     border: 1px solid var(--line);
     background: white;
     border-radius: 3px;
     cursor: pointer;
-    font-size: 11px;
+    font-size: 9px;
     font-weight: 600;
-    letter-spacing: 0.2px;
+    letter-spacing: 0.1px;
   }
   .mark-toggle button[data-v="correct"].active { background: var(--green); color: white; border-color: var(--green); }
   .mark-toggle button[data-v="partial"].active { background: var(--amber); color: white; border-color: var(--amber); }
   .mark-toggle button[data-v="incorrect"].active { background: var(--red); color: white; border-color: var(--red); }
   .mark-toggle button[data-v="notseen"].active { background: var(--muted); color: white; border-color: var(--muted); }
 
-  .rubric-comment {
-    width: 100%; font-size: 11.5px; border: 1px solid var(--line); border-radius: 3px; padding: 6px 7px; min-height: 38px; font-family: var(--sans);
+  .rubric-comment-toggle {
+    font-size: 9.5px;
+    color: var(--blue);
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 0;
+    text-decoration: underline;
   }
+  .rubric-comment {
+    width: 100%; font-size: 11px; border: 1px solid var(--line); border-radius: 3px; padding: 5px 6px; min-height: 32px; font-family: var(--sans);
+    display: none;
+    margin-top: 5px;
+  }
+  .rubric-comment.expanded { display: block; }
+  .rubric-comment.has-text { display: block; }
 
   .mark-pill { font-size: 10px; padding: 2px 6px; border-radius: 8px; font-weight: 700; text-transform: uppercase; color: white; }
   .mark-pill.correct { background: var(--green); }
@@ -774,27 +798,29 @@
       </div>
     </div>
   </div>
-  </div>
 
-  <!-- FULL WIDTH: OSCE Rubric -->
-  <div class="card">
-    <div class="card-header">
-      <h2>OSCE Rubric &mdash; Station 3: BLS &amp; AED</h2>
-      <span class="badge">10 marks</span>
-    </div>
-    <div class="card-body" style="max-height: 420px; overflow-y:auto;">
-      <div id="rubricBody" class="rubric-grid" style="padding-top:2px;"></div>
-      <div class="field" style="margin-top:6px">
-        <label>Additional comments (overall)</label>
-        <textarea id="overallComments" placeholder="General feedback on this student's performance not tied to a specific criterion&hellip;" style="min-height:70px"></textarea>
+  <!-- RIGHT: OSCE Rubric -->
+  <div class="col-rubric">
+    <div class="card">
+      <div class="card-header">
+        <h2>OSCE Rubric</h2>
+        <span class="badge">10 marks</span>
+      </div>
+      <div class="card-body" style="max-height: 560px; overflow-y:auto; padding:8px;">
+        <div id="rubricBody" class="rubric-grid" style="padding-top:2px;"></div>
+        <div class="field" style="margin-top:8px">
+          <label>Overall comments</label>
+          <textarea id="overallComments" placeholder="General feedback not tied to a specific criterion&hellip;" style="min-height:50px"></textarea>
+        </div>
+      </div>
+      <div class="rubric-total">
+        <div class="totals">
+          <div><span class="label">Total</span><span class="value" id="totalScore">0.0</span></div>
+        </div>
+        <div style="font-size:10px;color:#a9b6c1">/ 10.0</div>
       </div>
     </div>
-    <div class="rubric-total">
-      <div class="totals">
-        <div><span class="label">Total</span><span class="value" id="totalScore">0.0</span></div>
-      </div>
-      <div style="font-size:10px;color:#a9b6c1">/ 10.0</div>
-    </div>
+  </div>
   </div>
 
 </div>
@@ -1194,19 +1220,21 @@
     div.innerHTML = `
       <div class="rubric-item-head">
         <div class="title">${r.title}</div>
-        <div class="pts">${r.pts} mark${r.pts !== 1 ? 's' : ''}</div>
+        <div class="pts">${r.pts}pt${r.pts !== 1 ? 's' : ''}</div>
       </div>
       <div class="rubric-item-body">
         <div class="mark-toggle" data-rid="${r.id}">
-          <button data-v="correct">Correct</button>
-          <button data-v="partial">Partial</button>
-          <button data-v="incorrect">Incorrect</button>
-          <button data-v="notseen">Not observed</button>
+          <button data-v="correct" title="Correct">OK</button>
+          <button data-v="partial" title="Partial">Part</button>
+          <button data-v="incorrect" title="Incorrect">Inc</button>
+          <button data-v="notseen" title="Not observed">N/O</button>
         </div>
         <div class="rubric-row">
-          <input type="number" step="0.5" min="0" max="${r.pts}" data-rid="${r.id}" class="rubric-score" placeholder="0–${r.pts}">
-          <textarea data-rid="${r.id}" class="rubric-comment" placeholder="Comment / evidence&hellip;"></textarea>
+          <input type="number" step="0.5" min="0" max="${r.pts}" data-rid="${r.id}" class="rubric-score" placeholder="0">
+          <span class="pts-of">/ ${r.pts}</span>
+          <button class="rubric-comment-toggle" data-rid="${r.id}">+ comment</button>
         </div>
+        <textarea data-rid="${r.id}" class="rubric-comment" placeholder="Comment / evidence&hellip;"></textarea>
       </div>
     `;
     rubricBody.appendChild(div);
@@ -1239,6 +1267,14 @@
       scheduleAutosave();
     });
   });
+  rubricBody.querySelectorAll('.rubric-comment-toggle').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const rid = btn.dataset.rid;
+      const ta = rubricBody.querySelector(`.rubric-comment[data-rid="${rid}"]`);
+      ta.classList.toggle('expanded');
+      if (ta.classList.contains('expanded')) ta.focus();
+    });
+  });
 
   function updateTotals() {
     let total = 0;
@@ -1254,7 +1290,9 @@
       inp.value = rubricScores[inp.dataset.rid]?.mark || '';
     });
     rubricBody.querySelectorAll('.rubric-comment').forEach(ta => {
-      ta.value = rubricScores[ta.dataset.rid]?.comment || '';
+      const val = rubricScores[ta.dataset.rid]?.comment || '';
+      ta.value = val;
+      ta.classList.toggle('has-text', !!val);
     });
     rubricBody.querySelectorAll('.mark-toggle').forEach(group => {
       const rid = group.dataset.rid;
