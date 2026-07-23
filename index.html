@@ -1081,6 +1081,24 @@
   player.addEventListener('loadedmetadata', () => {
     timecode.textContent = `${fmtTime(player.currentTime)} / ${fmtTime(player.duration)}`;
     renderTimelineMarks();
+    if (player.videoWidth === 0 || player.videoHeight === 0) {
+      videoEmpty.style.display = 'block';
+      videoEmpty.innerHTML = '<span class="icon">&#9888;</span>This file has no readable video track in this browser (audio-only playback). Try a different browser (Chrome/Edge) or re-export the file as standard H.264 MP4.';
+      player.style.display = 'none';
+    }
+  });
+  player.addEventListener('error', () => {
+    const err = player.error;
+    const messages = {
+      1: 'Loading was aborted.',
+      2: 'A network error occurred while loading the video.',
+      3: 'The video could not be decoded &mdash; the file may be corrupted or use an unsupported codec.',
+      4: 'This video format/codec is not supported by your browser.'
+    };
+    const msg = (err && messages[err.code]) || 'The video could not be played.';
+    videoEmpty.style.display = 'block';
+    videoEmpty.innerHTML = `<span class="icon">&#9888;</span>${msg}<br>Try re-exporting as standard H.264 MP4, or open the file in a different browser (Chrome/Edge recommended).`;
+    player.style.display = 'none';
   });
 
   seekbar.addEventListener('input', () => {
