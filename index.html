@@ -662,6 +662,58 @@
     letter-spacing: 0.2px;
   }
 
+  .restored-banner {
+    background: #fdf3e0;
+    border-bottom: 2px solid var(--amber);
+    color: #6b4a08;
+    font-size: 12.5px;
+    padding: 9px 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .restored-banner strong { color: #4a3305; }
+  .restored-banner .rb-actions { margin-left: auto; display: flex; gap: 8px; }
+  .restored-banner button {
+    background: white;
+    border: 1px solid var(--amber);
+    color: #6b4a08;
+    padding: 4px 10px;
+    border-radius: 3px;
+    font-size: 11.5px;
+    cursor: pointer;
+    font-weight: 600;
+  }
+  .restored-banner button:hover { background: var(--amber); color: white; }
+  .restored-banner button.danger { border-color: var(--red); color: var(--red); }
+  .restored-banner button.danger:hover { background: var(--red); color: white; }
+
+  .mismatch-banner {
+    background: #fbefea;
+    border-bottom: 2px solid var(--red);
+    color: #7a2a1c;
+    font-size: 12.5px;
+    padding: 9px 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .mismatch-banner strong { color: #591f15; }
+  .mismatch-banner button {
+    background: white;
+    border: 1px solid var(--red);
+    color: var(--red);
+    padding: 4px 10px;
+    border-radius: 3px;
+    font-size: 11.5px;
+    cursor: pointer;
+    font-weight: 600;
+    margin-left: auto;
+  }
+  .mismatch-banner button:hover { background: var(--red); color: white; }
+
   .autosave-note {
     font-size: 10.5px;
     color: var(--muted);
@@ -713,8 +765,12 @@
     <span class="autosave-note"><span class="autosave-dot" id="autosaveDot"></span> <span id="autosaveText">Auto-saved</span></span>
     <button class="file-btn small ghost" id="loadSessionBtn"><i class="fa fa-folder-open"></i> Load saved session</button>
     <input type="file" id="loadSessionInput" accept=".json" style="display:none">
+    <button class="file-btn small ghost" id="newSessionBtn" style="border-color:var(--red);color:var(--red)"><i class="fa fa-trash"></i> Start new session</button>
   </div>
 </div>
+
+<div class="restored-banner" id="restoredBanner" style="display:none"></div>
+<div class="mismatch-banner" id="mismatchBanner" style="display:none"></div>
 
 <div class="top-action-bar">
   <button class="file-btn" id="saveSessionBtn"><i class="fa fa-save"></i> Save session (.json)</button>
@@ -923,6 +979,7 @@
 
   let nextId = 1;
   let currentVideoFileName = "";
+  let restoredVideoFileName = ""; // set when a prior session is restored from localStorage
   let selectedActionCode = null;
 
   // ---------------------------------------------------------------
@@ -949,6 +1006,9 @@
   const emptyLogNote = document.getElementById('emptyLogNote');
   const logCountBadge = document.getElementById('logCountBadge');
   const timelineMarks = document.getElementById('timelineMarks');
+  const restoredBanner = document.getElementById('restoredBanner');
+  const mismatchBanner = document.getElementById('mismatchBanner');
+  const newSessionBtn = document.getElementById('newSessionBtn');
 
   let editingEntryId = null; // null = adding new; otherwise id of entry being edited
 
@@ -1045,6 +1105,19 @@
   videoInput.addEventListener('change', (e) => {
     const file = e.target.files[0];
     if (!file) return;
+
+    // If a session was restored and it referenced a different video file, warn (non-blocking).
+    if (restoredVideoFileName && restoredVideoFileName !== file.name) {
+      mismatchBanner.style.display = 'flex';
+      mismatchBanner.innerHTML = `
+        <span>&#9888; The action log/rubric currently loaded were saved for <strong>${restoredVideoFileName}</strong>, but you just opened <strong>${file.name}</strong>. If these are different recordings, click "Start new session" above before tagging, or your annotations may be mixed up.</span>
+        <button id="dismissMismatch">Dismiss</button>
+      `;
+      document.getElementById('dismissMismatch').addEventListener('click', () => { mismatchBanner.style.display = 'none'; });
+    } else {
+      mismatchBanner.style.display = 'none';
+    }
+
     const url = URL.createObjectURL(file);
     player.src = url;
     player.style.display = 'block';
@@ -1431,8 +1504,9 @@
     return d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
   }
 
-  // Silently restore from localStorage on load, if present — no popups.
-  // A small note in the status line indicates a session was restored.
+  // Restore from localStorage on load, if present. No popups, but a prominent
+  // dismissible banner (not just quiet status-line text) makes it unmissable
+  // that this is NOT a blank/fresh session.
   window.addEventListener('DOMContentLoaded', () => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
@@ -1440,7 +1514,20 @@
         const data = JSON.parse(raw);
         if ((data.logEntries && data.logEntries.length) || data.meta?.videoId) {
           restoreSnapshot(data);
-          statusLine.innerHTML = `Restored auto-saved session &middot; re-open the video file to continue &middot; <strong>${logEntries.length}</strong> actions logged`;
+          restoredVideoFileName = data.meta?.videoFileName || '';
+          const vidLabel = data.meta?.videoId || restoredVideoFileName || 'an earlier video';
+          const rubricCount = Object.values(rubricScores).filter(r => r.mark !== '' || r.markCorrect).length;
+          restoredBanner.style.display = 'flex';
+          restoredBanner.innerHTML = `
+            <span>&#9203; Restored a previous session for <strong>${vidLabel}</strong> &mdash; <strong>${logEntries.length}</strong> action(s) logged, <strong>${rubricCount}</strong> rubric item(s) scored. Re-open the matching video file to continue, or start fresh if this doesn't look right.</span>
+            <span class="rb-actions">
+              <button id="dismissRestored">Keep &amp; continue</button>
+              <button class="danger" id="clearRestored">Start new session</button>
+            </span>
+          `;
+          document.getElementById('dismissRestored').addEventListener('click', () => { restoredBanner.style.display = 'none'; });
+          document.getElementById('clearRestored').addEventListener('click', startNewSession);
+          statusLine.innerHTML = `Restored session: ${vidLabel} &middot; <strong>${logEntries.length}</strong> actions logged`;
         }
       }
     } catch (err) { /* ignore corrupt autosave */ }
@@ -1449,6 +1536,43 @@
   window.addEventListener('beforeunload', () => {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(buildSnapshot())); } catch (err) {}
   });
+
+  // ---------------------------------------------------------------
+  // Start new session — explicit, confirmed reset of everything
+  // ---------------------------------------------------------------
+  function startNewSession() {
+    const ok = confirm('Start a new session? This clears the action log, rubric scores, video name, and assessor name from this browser. This cannot be undone (export first if you need to keep this data).');
+    if (!ok) return;
+
+    logEntries = [];
+    nextId = 1;
+    editingEntryId = null;
+    RUBRIC.forEach(r => { rubricScores[r.id] = { mark: '', markCorrect: '', comment: '' }; });
+    overallComments.value = '';
+    document.getElementById('videoId').value = '';
+    document.getElementById('assessorName').value = '';
+    currentVideoFileName = '';
+    restoredVideoFileName = '';
+
+    player.pause();
+    player.removeAttribute('src');
+    player.load();
+    player.style.display = 'none';
+    videoEmpty.style.display = 'block';
+    videoEmpty.innerHTML = '<span class="icon">&#9654;</span>Open a local video file to begin.<br>Nothing is uploaded &mdash; the file is read directly from your computer.';
+
+    restoredBanner.style.display = 'none';
+    mismatchBanner.style.display = 'none';
+
+    try { localStorage.removeItem(STORAGE_KEY); } catch (err) {}
+
+    exitEditMode();
+    refreshRubricUI();
+    renderLog();
+    updateStatus();
+    statusLine.innerHTML = 'New session started &middot; <strong>0</strong> actions logged';
+  }
+  newSessionBtn.addEventListener('click', startNewSession);
 
   // ---------------------------------------------------------------
   // Save / load session (JSON) — manual, fully local
