@@ -76,7 +76,7 @@
   }
   .row-top {
     display: grid;
-    grid-template-columns: 1.1fr 1fr 0.85fr;
+    grid-template-columns: 1fr 1fr 0.95fr;
     gap: 16px;
     align-items: start;
   }
@@ -574,25 +574,28 @@
   .mark-toggle {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 4px;
-    margin-bottom: 6px;
+    gap: 6px;
+    margin-bottom: 8px;
   }
   .mark-toggle button {
-    padding: 7px 4px;
-    border: 1px solid var(--line);
+    padding: 9px 6px;
+    border: 1.5px solid var(--line);
     background: white;
-    border-radius: 3px;
+    border-radius: 5px;
     cursor: pointer;
-    font-size: 12px;
-    font-weight: 600;
-    letter-spacing: 0;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.1px;
     text-align: center;
     line-height: 1.25;
+    box-shadow: 0 1px 2px rgba(28,41,51,0.06);
+    transition: background 0.12s, border-color 0.12s, box-shadow 0.12s;
   }
-  .mark-toggle button[data-v="correct"].active { background: var(--green); color: white; border-color: var(--green); }
-  .mark-toggle button[data-v="partial"].active { background: var(--amber); color: white; border-color: var(--amber); }
-  .mark-toggle button[data-v="incorrect"].active { background: var(--red); color: white; border-color: var(--red); }
-  .mark-toggle button[data-v="notseen"].active { background: var(--muted); color: white; border-color: var(--muted); }
+  .mark-toggle button:hover { border-color: var(--blue); box-shadow: 0 1px 4px rgba(28,41,51,0.12); }
+  .mark-toggle button[data-v="correct"].active { background: var(--green); color: white; border-color: var(--green); box-shadow: 0 1px 3px rgba(47,125,79,0.4); }
+  .mark-toggle button[data-v="partial"].active { background: var(--amber); color: white; border-color: var(--amber); box-shadow: 0 1px 3px rgba(184,121,15,0.4); }
+  .mark-toggle button[data-v="incorrect"].active { background: var(--red); color: white; border-color: var(--red); box-shadow: 0 1px 3px rgba(179,64,47,0.4); }
+  .mark-toggle button[data-v="notseen"].active { background: var(--muted); color: white; border-color: var(--muted); box-shadow: 0 1px 3px rgba(100,112,123,0.4); }
 
   .rubric-comment-toggle {
     font-size: 11px;
