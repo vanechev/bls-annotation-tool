@@ -76,17 +76,12 @@
   }
   .row-top {
     display: grid;
-    grid-template-columns: 1fr 1fr 0.95fr;
+    grid-template-columns: 1.15fr 1fr;
     gap: 16px;
     align-items: start;
   }
-  @media (max-width: 1300px) {
-    .row-top { grid-template-columns: 1fr 1fr; }
-    .row-top .col-rubric { grid-column: 1 / -1; }
-  }
   @media (max-width: 800px) {
     .row-top { grid-template-columns: 1fr; }
-    .row-top .col-rubric { grid-column: auto; }
   }
 
   /* ---------- Top action bar (Save & Export) ---------- */
@@ -854,58 +849,53 @@
     </div>
   </div>
 
-  <!-- RIGHT: Action tag grid -->
+  <!-- RIGHT: Tabbed panel — Select action / OSCE Rubric -->
   <div>
     <div class="card">
-      <div class="card-header">
-        <h2>Select action</h2>
-        <span class="badge">click a code to select</span>
+      <div class="tabs">
+        <div class="tab active" id="tabBtnActions" data-tab="actions">Select action <span class="badge" id="tabActionsBadge" style="margin-left:5px">click a code</span></div>
+        <div class="tab" id="tabBtnRubric" data-tab="rubric">OSCE Rubric <span class="badge" id="tabRubricBadge" style="margin-left:5px">10 marks</span></div>
       </div>
 
-      <div class="card-body" style="padding-bottom:0">
-        <div class="selected-action-banner empty" id="selectedBanner">No action selected &mdash; pick one below</div>
-        <div class="time-row" style="margin-top:10px">
-          <label>Start</label>
-          <input type="text" id="startTime" placeholder="00:00:00">
-          <button class="now-btn" id="setStartBtn">Now</button>
-          <label style="margin-left:6px">End</label>
-          <input type="text" id="endTime" placeholder="00:00:00">
-          <button class="now-btn" id="setEndBtn">Now</button>
-          <button class="add-row-btn" id="addLogBtn" disabled>+ Add</button>
+      <div class="tab-panel active" id="tabPanelActions">
+        <div class="card-body" style="padding-bottom:0">
+          <div class="selected-action-banner empty" id="selectedBanner">No action selected &mdash; pick one below</div>
+          <div class="time-row" style="margin-top:10px">
+            <label>Start</label>
+            <input type="text" id="startTime" placeholder="00:00:00">
+            <button class="now-btn" id="setStartBtn">Now</button>
+            <label style="margin-left:6px">End</label>
+            <input type="text" id="endTime" placeholder="00:00:00">
+            <button class="now-btn" id="setEndBtn">Now</button>
+            <button class="add-row-btn" id="addLogBtn" disabled>+ Add</button>
+          </div>
+          <div class="field" style="margin-top:8px">
+            <textarea id="commentBox" placeholder="Optional comment&hellip;" style="min-height:34px"></textarea>
+          </div>
+          <div class="form-btn-row" style="margin-top:6px" id="cancelEditRow">
+            <button class="cancel-edit-btn" id="cancelEditBtn">Cancel edit</button>
+          </div>
         </div>
-        <div class="field" style="margin-top:8px">
-          <textarea id="commentBox" placeholder="Optional comment&hellip;" style="min-height:34px"></textarea>
-        </div>
-        <div class="form-btn-row" style="margin-top:6px" id="cancelEditRow">
-          <button class="cancel-edit-btn" id="cancelEditBtn">Cancel edit</button>
+
+        <div class="card-body" style="padding-top:10px; border-top:1px solid var(--line); margin-top:10px">
+          <div class="action-groups-wrap" id="actionGroupsWrap"></div>
         </div>
       </div>
 
-      <div class="card-body" style="padding-top:10px; border-top:1px solid var(--line); margin-top:10px">
-        <div class="action-groups-wrap" id="actionGroupsWrap"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- RIGHT: OSCE Rubric -->
-  <div class="col-rubric">
-    <div class="card">
-      <div class="card-header">
-        <h2>OSCE Rubric</h2>
-        <span class="badge">10 marks</span>
-      </div>
-      <div class="card-body" style="max-height: 560px; overflow-y:auto; padding:8px;">
-        <div id="rubricBody" class="rubric-grid" style="padding-top:2px;"></div>
-        <div class="field" style="margin-top:8px">
-          <label>Overall comments</label>
-          <textarea id="overallComments" placeholder="General feedback not tied to a specific criterion&hellip;" style="min-height:50px"></textarea>
+      <div class="tab-panel" id="tabPanelRubric">
+        <div class="card-body" style="max-height: 560px; overflow-y:auto; padding:8px;">
+          <div id="rubricBody" class="rubric-grid" style="padding-top:2px;"></div>
+          <div class="field" style="margin-top:8px">
+            <label>Overall comments</label>
+            <textarea id="overallComments" placeholder="General feedback not tied to a specific criterion&hellip;" style="min-height:50px"></textarea>
+          </div>
         </div>
-      </div>
-      <div class="rubric-total">
-        <div class="totals">
-          <div><span class="label">Total</span><span class="value" id="totalScore">0.0</span></div>
+        <div class="rubric-total">
+          <div class="totals">
+            <div><span class="label">Total</span><span class="value" id="totalScore">0.0</span></div>
+          </div>
+          <div style="font-size: 12px;color:#a9b6c1">/ 10.0</div>
         </div>
-        <div style="font-size: 12px;color:#a9b6c1">/ 10.0</div>
       </div>
     </div>
   </div>
@@ -1023,6 +1013,25 @@
 
   const autosaveDot = document.getElementById('autosaveDot');
   const autosaveText = document.getElementById('autosaveText');
+
+  // ---------------------------------------------------------------
+  // Tabs: Select action / OSCE Rubric — share one panel, no scrolling
+  // between them regardless of window width.
+  // ---------------------------------------------------------------
+  const tabBtnActions = document.getElementById('tabBtnActions');
+  const tabBtnRubric = document.getElementById('tabBtnRubric');
+  const tabPanelActions = document.getElementById('tabPanelActions');
+  const tabPanelRubric = document.getElementById('tabPanelRubric');
+
+  function switchTab(name) {
+    const toActions = name === 'actions';
+    tabBtnActions.classList.toggle('active', toActions);
+    tabBtnRubric.classList.toggle('active', !toActions);
+    tabPanelActions.classList.toggle('active', toActions);
+    tabPanelRubric.classList.toggle('active', !toActions);
+  }
+  tabBtnActions.addEventListener('click', () => switchTab('actions'));
+  tabBtnRubric.addEventListener('click', () => switchTab('rubric'));
 
   // ---------------------------------------------------------------
   // Populate quick-tag grid (primary action selector), colour-coded by theme
