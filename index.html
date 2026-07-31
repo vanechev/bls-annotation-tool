@@ -306,9 +306,38 @@
   .tab-panel { display: none; }
   .tab-panel.active { display: block; }
 
+  /* ---------- Jump-to-group quick nav (reduces scrolling while tagging) ---------- */
+  .group-jump-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-bottom: 8px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--line);
+  }
+  .group-jump-nav button {
+    border: 1.5px solid var(--group-color, var(--line));
+    background: white;
+    color: var(--group-color, var(--muted));
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    font-size: 11.5px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: background 0.12s, color 0.12s;
+  }
+  .group-jump-nav button:hover { background: var(--group-color, var(--blue)); color: white; }
+  .group-jump-nav button.in-view { background: var(--group-color, var(--blue)); color: white; box-shadow: 0 0 0 2px rgba(37,99,168,0.15); }
+
   /* ---------- Quick-tag action grid (primary selector), grouped by rubric heading ---------- */
   .action-groups-wrap {
-    max-height: 460px;
+    max-height: calc(100vh - 430px);
+    min-height: 320px;
     overflow-y: auto;
   }
   .action-group-section { margin-bottom: 10px; }
@@ -877,7 +906,8 @@
           </div>
         </div>
 
-        <div class="card-body" style="padding-top:10px; border-top:1px solid var(--line); margin-top:10px">
+        <div class="card-body" style="padding-top:10px; border-top:1px solid var(--line); margin-top:10px; padding-bottom:10px">
+          <div class="group-jump-nav" id="groupJumpNav"></div>
           <div class="action-groups-wrap" id="actionGroupsWrap"></div>
         </div>
       </div>
@@ -1052,10 +1082,15 @@
   groupNames.forEach((g, i) => { groupColor[g] = GROUP_COLORS[i % GROUP_COLORS.length]; });
 
   const groupCountEls = {}; // group name -> count <span> element
+  const groupJumpNav = document.getElementById('groupJumpNav');
+  const groupSectionEls = {}; // group name -> section element
+  const groupJumpBtns = {}; // group name -> nav chip button
 
-  groupNames.forEach(g => {
+  groupNames.forEach((g, gi) => {
     const section = document.createElement('div');
     section.className = 'action-group-section';
+    section.id = `group-section-${gi}`;
+    groupSectionEls[g] = section;
 
     const header = document.createElement('div');
     header.className = 'action-group-header';
@@ -1078,7 +1113,40 @@
     section.appendChild(grid);
 
     actionGroupsWrap.appendChild(section);
+
+    // Jump-nav chip: use the group's leading number (e.g. "3. Positions..." -> "3")
+    const numMatch = g.match(/^(\d+)\./);
+    const chip = document.createElement('button');
+    chip.textContent = numMatch ? numMatch[1] : (gi + 1);
+    chip.title = g;
+    chip.style.setProperty('--group-color', groupColor[g]);
+    chip.addEventListener('click', () => {
+      actionGroupsWrap.scrollTo({ top: section.offsetTop - actionGroupsWrap.offsetTop, behavior: 'smooth' });
+    });
+    groupJumpNav.appendChild(chip);
+    groupJumpBtns[g] = chip;
   });
+
+  // Highlight the jump-nav chip for whichever group is currently at the top of the visible list
+  let jumpNavHighlightScheduled = false;
+  function updateJumpNavHighlight() {
+    jumpNavHighlightScheduled = false;
+    const wrapTop = actionGroupsWrap.getBoundingClientRect().top;
+    let current = groupNames[0];
+    for (const g of groupNames) {
+      const el = groupSectionEls[g];
+      if (!el) continue;
+      if (el.getBoundingClientRect().top - wrapTop <= 8) current = g;
+    }
+    groupNames.forEach(g => groupJumpBtns[g].classList.toggle('in-view', g === current));
+  }
+  actionGroupsWrap.addEventListener('scroll', () => {
+    if (!jumpNavHighlightScheduled) {
+      jumpNavHighlightScheduled = true;
+      requestAnimationFrame(updateJumpNavHighlight);
+    }
+  });
+  updateJumpNavHighlight();
 
   function updateGroupCounts() {
     const counts = {};
