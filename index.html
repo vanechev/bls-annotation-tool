@@ -913,7 +913,10 @@
       </div>
 
       <div class="tab-panel" id="tabPanelRubric">
-        <div class="card-body" style="max-height: 560px; overflow-y:auto; padding:8px;">
+        <div class="card-body" style="padding:10px 10px 0 10px">
+          <div class="group-jump-nav" id="rubricJumpNav"></div>
+        </div>
+        <div class="card-body" id="rubricScrollBody" style="max-height: 560px; overflow-y:auto; padding:0 8px 8px 8px">
           <div id="rubricBody" class="rubric-grid" style="padding-top:2px;"></div>
           <div class="field" style="margin-top:8px">
             <label>Overall comments</label>
@@ -1443,9 +1446,15 @@
   // ---------------------------------------------------------------
   // Rubric panel (single student, with correctness rating per item)
   // ---------------------------------------------------------------
-  RUBRIC.forEach(r => {
+  const rubricJumpNav = document.getElementById('rubricJumpNav');
+  const rubricScrollBody = document.getElementById('rubricScrollBody');
+  const rubricItemEls = {}; // r.id -> item div
+  const rubricJumpBtns = {}; // r.id -> nav chip button
+
+  RUBRIC.forEach((r, ri) => {
     const div = document.createElement('div');
     div.className = 'rubric-item';
+    div.id = `rubric-item-${ri}`;
     div.innerHTML = `
       <div class="rubric-item-head">
         <div class="title">${r.title}</div>
@@ -1467,7 +1476,42 @@
       </div>
     `;
     rubricBody.appendChild(div);
+    rubricItemEls[r.id] = div;
+
+    // Jump-nav chip, colour-matched to the same group colour used in the tag list
+    // (rubric criteria are numbered/ordered the same as the action groups).
+    const numMatch = r.title.match(/^(\d+)\./);
+    const color = ri < GROUP_COLORS.length ? GROUP_COLORS[ri] : 'var(--muted)';
+    const chip = document.createElement('button');
+    chip.textContent = numMatch ? numMatch[1] : (ri + 1);
+    chip.title = r.title;
+    chip.style.setProperty('--group-color', color);
+    chip.addEventListener('click', () => {
+      rubricScrollBody.scrollTo({ top: div.offsetTop - rubricBody.offsetTop, behavior: 'smooth' });
+    });
+    rubricJumpNav.appendChild(chip);
+    rubricJumpBtns[r.id] = chip;
   });
+
+  let rubricNavHighlightScheduled = false;
+  function updateRubricNavHighlight() {
+    rubricNavHighlightScheduled = false;
+    const wrapTop = rubricScrollBody.getBoundingClientRect().top;
+    let current = RUBRIC[0].id;
+    RUBRIC.forEach(r => {
+      const el = rubricItemEls[r.id];
+      if (!el) return;
+      if (el.getBoundingClientRect().top - wrapTop <= 8) current = r.id;
+    });
+    RUBRIC.forEach(r => rubricJumpBtns[r.id].classList.toggle('in-view', r.id === current));
+  }
+  rubricScrollBody.addEventListener('scroll', () => {
+    if (!rubricNavHighlightScheduled) {
+      rubricNavHighlightScheduled = true;
+      requestAnimationFrame(updateRubricNavHighlight);
+    }
+  });
+  updateRubricNavHighlight();
 
   rubricBody.querySelectorAll('.mark-toggle').forEach(group => {
     group.querySelectorAll('button').forEach(btn => {
